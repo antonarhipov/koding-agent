@@ -22,7 +22,15 @@ tasks.test {
 }
 
 application {
-    mainClass.set("com.example.kagent.MainKt")
+    mainClass.set("org.example.kagent.MainKt")
+}
+
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "org.example.kagent.MainKt"
+    }
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 kotlin {
