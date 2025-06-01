@@ -71,7 +71,7 @@ fun createCodingAgent(): AIAgent {
             )
         },
         model = OpenAIModels.Chat.GPT4o,
-        maxAgentIterations = 15
+        maxAgentIterations = 25
     )
 
     val toolRegistry = ToolRegistry {
@@ -96,11 +96,11 @@ fun createCodingAgent(): AIAgent {
                     println("✅ Coding session completed: $strategyName")
                     println("📋 Final result: $result")
                 }
-                onToolCall = { tool, _ ->
-                    println("🔧 Executing tool: ${tool.name}")
+                onToolCall = { tool, args ->
+                    println("🔧 Executing tool: ${tool.name}($args)")
                 }
-                onToolCallResult = { tool, _, result ->
-                    println("✅ Tool completed: ${tool.name}")
+                onToolCallResult = { tool, args, result ->
+                    println("✅ Tool completed: ${tool.name}($args): $result")
                 }
                 onAgentRunError =
                     { strategyName, exception -> println("🚨 Error occurred for strategy: $strategyName: $exception") }
