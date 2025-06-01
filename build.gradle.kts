@@ -14,6 +14,7 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
     implementation("ai.koog:koog-agents:0.1.0")
+    implementation("org.slf4j:slf4j-simple:2.0.9")
 }
 
 tasks.test {

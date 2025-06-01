@@ -9,15 +9,12 @@ import ai.koog.agents.core.dsl.extension.nodeLLMRequest
 import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResult
 import ai.koog.agents.core.dsl.extension.onAssistantMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
-import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.local.features.eventHandler.feature.EventHandler
 import ai.koog.prompt.dsl.Prompt
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
-import org.example.kagent.tools.FileOperationsTool
-import org.example.kagent.tools.KotlinCompilerTool
-import org.example.kagent.tools.ProjectStructureTool
-import org.example.kagent.tools.TestRunnerTool
+import kotlinx.coroutines.runBlocking
+import org.example.kagent.mcp.McpIntegration
 
 fun createCodingAgent(): AIAgent {
     // Create prompt executor
@@ -43,6 +40,12 @@ fun createCodingAgent(): AIAgent {
                 
                 ## Available Tools:
                 
+                When JetBrains MCP server is available:
+                - JetBrains IDE tools for advanced project management
+                - Intelligent code completion and analysis
+                - Integrated debugging and testing capabilities
+                
+                Fallback tools when MCP is unavailable:
                 - **file_operations**: Create, read, write, delete files
                 - **kotlin_compiler**: Compile Kotlin source files
                 - **test_runner**: Execute Kotlin tests
@@ -74,11 +77,8 @@ fun createCodingAgent(): AIAgent {
         maxAgentIterations = 25
     )
 
-    val toolRegistry = ToolRegistry {
-        tool(ProjectStructureTool)
-        tool(FileOperationsTool)
-        tool(KotlinCompilerTool)
-        tool(TestRunnerTool)
+    val toolRegistry = runBlocking {
+        McpIntegration.createToolRegistryWithMcpFallback()
     }
 
     // Create and return the agent
