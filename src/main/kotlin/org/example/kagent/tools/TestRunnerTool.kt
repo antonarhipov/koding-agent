@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023 Kagent Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.example.kagent.tools
 
 import ai.koog.agents.core.tools.Tool
@@ -39,21 +55,21 @@ object TestRunnerTool : Tool<TestRunnerTool.Args, ToolResult>() {
     override suspend fun execute(args: Args): Result {
         return try {
             val className = args.mainClass ?: extractClassName(args.testFile)
-            
+
             val processBuilder = ProcessBuilder(
                 "kotlin",
                 "-classpath", "build/classes:.",
                 className
             )
-            
+
             processBuilder.redirectErrorStream(true)
             val process = processBuilder.start()
-            
+
             val output = process.inputStream.bufferedReader().use { it.readText() }
             val exitCode = process.waitFor()
-            
+
             val results = output.lines().filter { it.isNotBlank() }
-            
+
             Result(
                 success = exitCode == 0,
                 message = if (exitCode == 0) "Tests passed" else "Tests failed",
@@ -63,7 +79,7 @@ object TestRunnerTool : Tool<TestRunnerTool.Args, ToolResult>() {
             Result(false, "Test execution error: ${e.message}", emptyList())
         }
     }
-    
+
     private fun extractClassName(filePath: String): String {
         val fileName = File(filePath).nameWithoutExtension
         return "${fileName}Kt"

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023 Kagent Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.example.kagent
 
 import ai.koog.agents.core.agent.AIAgent
@@ -34,22 +50,22 @@ fun createCodingAgent(): AIAgent {
             system(
                 """
                 You are an expert Kotlin coding assistant that can help users with:
-                
+
                 1. **Code Generation**: Create Kotlin code based on requirements
                 2. **Test Creation**: Write comprehensive unit tests
                 3. **Code Compilation**: Compile Kotlin code and handle errors
                 4. **Test Execution**: Run tests and report results
                 5. **Project Setup**: Create proper project structures
-                
+
                 ## Available Tools:
-                
+
                 - **file_operations**: Create, read, write, delete files
                 - **kotlin_compiler**: Compile Kotlin source files
                 - **test_runner**: Execute Kotlin tests
                 - **project_structure**: Set up project directories
-                
+
                 ## Workflow:
-                
+
                 1. Understand the user's requirements
                 2. Create appropriate project structure if needed
                 3. Generate the main code file
@@ -57,15 +73,15 @@ fun createCodingAgent(): AIAgent {
                 5. Compile both main code and tests
                 6. Run tests and report results
                 7. Fix any compilation or test failures
-                
+
                 ## Best Practices:
-                
+
                 - Write clean, idiomatic Kotlin code
                 - Include proper error handling
                 - Create meaningful test cases
                 - Follow Kotlin naming conventions
                 - Add appropriate documentation
-                
+
                 Always explain what you're doing at each step and provide clear feedback about success or failure.
                 """.trimIndent()
             )
