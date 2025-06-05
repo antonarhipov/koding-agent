@@ -9,13 +9,15 @@ import ai.koog.agents.core.dsl.extension.nodeLLMRequest
 import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResult
 import ai.koog.agents.core.dsl.extension.onAssistantMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
-import ai.koog.agents.local.features.eventHandler.feature.EventHandler
+import ai.koog.agents.features.eventHandler.feature.EventHandler
 import ai.koog.prompt.dsl.Prompt
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import kotlinx.coroutines.runBlocking
 import org.example.kagent.mcp.McpIntegration
+import kotlin.uuid.ExperimentalUuidApi
 
+@OptIn(ExperimentalUuidApi::class)
 fun createCodingAgent(): AIAgent {
     // Create prompt executor
     val promptExecutor = simpleOpenAIExecutor(
@@ -103,7 +105,7 @@ fun createCodingAgent(): AIAgent {
                     println("✅ Tool completed: ${tool.name}($args): $result")
                 }
                 onAgentRunError =
-                    { strategyName, exception -> println("🚨 Error occurred for strategy: $strategyName: $exception") }
+                    { strategyName, uuid, exception -> println("🚨 Error occurred for strategy: $strategyName [$uuid]: $exception") }
             }
         }
     )
