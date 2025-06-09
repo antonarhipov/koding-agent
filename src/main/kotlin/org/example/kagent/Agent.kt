@@ -91,21 +91,22 @@ fun createCodingAgent(): AIAgent {
         toolRegistry = toolRegistry,
         installFeatures = {
             install(EventHandler) {
-                onBeforeAgentStarted = { strategy, _ ->
+                onBeforeAgentStarted { strategy, _ ->
                     println("🚀 Starting coding session with strategy: ${strategy.name}")
                 }
-                onAgentFinished = { strategyName, result ->
+                onAgentFinished { strategyName, result ->
                     println("✅ Coding session completed: $strategyName")
                     println("📋 Final result: $result")
                 }
-                onToolCall = { tool, args ->
+                onToolCall { tool, args ->
                     println("🔧 Executing tool: ${tool.name}($args)")
                 }
-                onToolCallResult = { tool, args, result ->
+                onToolCallResult { tool, args, result ->
                     println("✅ Tool completed: ${tool.name}($args): $result")
                 }
-                onAgentRunError =
-                    { strategyName, uuid, exception -> println("🚨 Error occurred for strategy: $strategyName [$uuid]: $exception") }
+                onAgentRunError { strategyName, uuid, exception
+                    -> println("🚨 Error occurred for strategy: $strategyName [$uuid]: $exception")
+                }
             }
         }
     )

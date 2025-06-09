@@ -1,5 +1,6 @@
 package org.example.kagent.mcp
 
+import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.ext.agent.simpleSingleRunAgent
 import ai.koog.agents.mcp.McpToolRegistryProvider
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
@@ -29,7 +30,7 @@ fun main() {
                 println("Successfully connected to MCP server")
 
                 // Create the runner
-                val agent = simpleSingleRunAgent(
+                val agent = AIAgent(
                     executor = simpleOpenAIExecutor(openAIApiToken),
                     llmModel = OpenAIModels.Chat.GPT4o,
                     toolRegistry = toolRegistry,
