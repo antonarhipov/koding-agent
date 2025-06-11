@@ -5,24 +5,56 @@ import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.dsl.builder.forwardTo
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.agents.core.dsl.extension.nodeExecuteTool
+import ai.koog.agents.core.dsl.extension.nodeLLMCompressHistory
 import ai.koog.agents.core.dsl.extension.nodeLLMRequest
 import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResult
 import ai.koog.agents.core.dsl.extension.onAssistantMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
+import ai.koog.agents.core.environment.ReceivedToolResult
 import ai.koog.agents.features.eventHandler.feature.EventHandler
+import ai.koog.agents.features.tokenizer.feature.tokenizer
 import ai.koog.prompt.dsl.Prompt
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
+import ai.koog.prompt.executor.llms.all.simpleOllamaAIExecutor
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
+import ai.koog.prompt.executor.ollama.client.OllamaClient
+import ai.koog.prompt.executor.ollama.client.toLLModel
+import ai.koog.prompt.llm.LLMCapability
+import ai.koog.prompt.llm.LLMProvider
+import ai.koog.prompt.llm.LLModel
+import ai.koog.prompt.llm.OllamaModels
 import kotlinx.coroutines.runBlocking
 import org.example.kagent.mcp.McpIntegration
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
-fun createCodingAgent(): AIAgent {
-    // Create prompt executor
-    val promptExecutor = simpleOpenAIExecutor(
-        System.getenv("OPENAI_API_KEY") ?: throw IllegalStateException("OPENAI_API_KEY not set")
-    )
+fun createCodingAgent(selector: String): AIAgent {
+    val executor = when (selector) {
+        "openai" -> simpleOpenAIExecutor(
+            System.getenv("OPENAI_API_KEY") ?: throw IllegalStateException("OPENAI_API_KEY not set")
+        )
+
+        "ollama" -> simpleOllamaAIExecutor()
+        else -> throw IllegalArgumentException("Unknown executor selector: $selector")
+    }
+
+    val model = when (selector) {
+        "openai" -> OpenAIModels.Chat.GPT4o
+        "ollama" -> {
+//            val llmClient = OllamaClient("http://localhost:11434")  //TODO
+//            runBlocking { llmClient.getModelOrNull("mistral") }!!.toLLModel()
+            LLModel(
+                provider = LLMProvider.Ollama,
+                id = "mistral",
+                capabilities = listOf(
+                    LLMCapability.Temperature,
+                    LLMCapability.Schema.JSON.Simple,
+                    LLMCapability.Tools
+                )
+            )
+        }
+        else -> throw IllegalArgumentException("Unknown executor selector: $selector")
+    }
 
     // Create an agent strategy
     val strategy = createCodingAgentStrategy()
@@ -39,19 +71,6 @@ fun createCodingAgent(): AIAgent {
                 3. **Code Compilation**: Compile Kotlin code and handle errors
                 4. **Test Execution**: Run tests and report results
                 5. **Project Setup**: Create proper project structures
-                
-                ## Available Tools:
-                
-                When JetBrains MCP server is available:
-                - JetBrains IDE tools for advanced project management
-                - Intelligent code completion and analysis
-                - Integrated debugging and testing capabilities
-                
-                Fallback tools when MCP is unavailable:
-                - **file_operations**: Create, read, write, delete files
-                - **kotlin_compiler**: Compile Kotlin source files
-                - **test_runner**: Execute Kotlin tests
-                - **project_structure**: Set up project directories
                 
                 ## Workflow:
                 
@@ -71,11 +90,14 @@ fun createCodingAgent(): AIAgent {
                 - Follow Kotlin naming conventions
                 - Add appropriate documentation
                 
+                ***IMPORTANT*** ALWAYS USE TOOLS TO IMPLEMENT THE TASK!!!
+                ***IMPORTANT*** DON'T CHAT WITH ME BEFORE YOU FINISH
+                
                 Always explain what you're doing at each step and provide clear feedback about success or failure.
                 """.trimIndent()
             )
         },
-        model = OpenAIModels.Chat.GPT4o,
+        model = model,
         maxAgentIterations = 25
     )
 
@@ -85,7 +107,7 @@ fun createCodingAgent(): AIAgent {
 
     // Create and return the agent
     return AIAgent(
-        promptExecutor = promptExecutor,
+        promptExecutor = executor,
         strategy = strategy,
         agentConfig = agentConfig,
         toolRegistry = toolRegistry,
@@ -117,22 +139,22 @@ fun createCodingAgentStrategy() = strategy("Coding Assistant") {
     val nodeAnalyzeRequest by nodeLLMRequest()
     val nodeExecuteTool by nodeExecuteTool()
     val nodeSendToolResult by nodeLLMSendToolResult()
+//    val compressNode by nodeLLMCompressHistory<ReceivedToolResult>()
 
     // Define the workflow edges
     // Start -> Analyze user request
     edge(nodeStart forwardTo nodeAnalyzeRequest) // Analyze request -> Finish (if no tools needed)
-    edge((nodeAnalyzeRequest forwardTo nodeFinish) transformed { it } onAssistantMessage { true })
+    edge(nodeAnalyzeRequest forwardTo nodeFinish onAssistantMessage { true })
 
     // Analyze request -> Execute tool (if tool call is made)
-    edge((nodeAnalyzeRequest forwardTo nodeExecuteTool) onToolCall { true })
+    edge(nodeAnalyzeRequest forwardTo nodeExecuteTool onToolCall { true })
 
     // Execute tool -> Send a tool result back to LLM
     edge(nodeExecuteTool forwardTo nodeSendToolResult)
 
     // Send tool result -> Finish (if final response)
-    edge((nodeSendToolResult forwardTo nodeFinish) transformed { it } onAssistantMessage { true })
+    edge(nodeSendToolResult forwardTo nodeFinish onAssistantMessage { true })
 
     // Send tool result -> Execute another tool (for chained operations)
-    edge((nodeSendToolResult forwardTo nodeExecuteTool) onToolCall { true }
-    )
+    edge(nodeSendToolResult forwardTo nodeExecuteTool onToolCall { true })
 }

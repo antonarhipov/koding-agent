@@ -1,0 +1,39 @@
+//            system {
+//                markdown {
+//                    h2("instructions")
+//                    bulleted {
+//                        item("")
+//                    }
+//                }
+//            }
+
+
+install(MessageTokenizer) {
+                tokenizer = SimpleRegexBasedTokenizer()
+            }
+            install(Tracing) {
+                addMessageProcessor(object: FeatureMessageProcessor() {
+                    override suspend fun processMessage(message: FeatureMessage) {
+                        println(message.toString()) // TODO
+                    }
+
+                    override suspend fun close() {
+                        TODO("Not yet implemented")
+                    }
+
+                })
+            }
+
+
+
+
+val strategy = strategy("test") {
+    val hash by node<String, Int> { it.hashCode() }
+    val add5 by node<Int, Int> { it + 5 }
+    val presentResult by node<String, String> { "result: $it" }
+
+    edge(nodeStart forwardTo hash)
+    edge(hash forwardTo add5)
+    edge(add5 forwardTo presentResult transformed { "$it" })
+    edge(presentResult forwardTo nodeFinish)
+}

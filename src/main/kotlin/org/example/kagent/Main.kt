@@ -2,12 +2,12 @@ package org.example.kagent
 
 import kotlinx.coroutines.runBlocking
 
-fun main() = runBlocking {
+fun main(args: Array<String>) = runBlocking {
     println("🎯 Kotlin Coding Agent with Koog Framework")
     println("=".repeat(50))
 
     try {
-        val agent = createCodingAgent()
+        val agent = createCodingAgent(args.firstOrNull() ?: "openai")
 
         // Example usage scenarios
         val examples = listOf(

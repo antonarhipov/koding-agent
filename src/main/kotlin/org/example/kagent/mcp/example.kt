@@ -1,13 +1,16 @@
 package org.example.kagent.mcp
 
 import ai.koog.agents.core.agent.AIAgent
-import ai.koog.agents.ext.agent.simpleSingleRunAgent
 import ai.koog.agents.mcp.McpToolRegistryProvider
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
+import ai.koog.prompt.executor.llms.all.simpleOllamaAIExecutor
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
+import ai.koog.prompt.llm.LLMCapability
+import ai.koog.prompt.llm.LLMProvider
+import ai.koog.prompt.llm.LLModel
 import kotlinx.coroutines.runBlocking
 
-fun main() {
+fun main(args: Array<String>) {
     // Get the API key from environment variables
     val openAIApiToken = System.getenv("OPENAI_API_KEY") ?: error("OPENAI_API_KEY environment variable not set")
 
@@ -15,9 +18,32 @@ fun main() {
         "npx", "-y", "@jetbrains/mcp-proxy",
     ).start()
 
-    // Wait for the server to start
-    Thread.sleep(5000)
+    //select executor based on command line parameter
+    val executor = when (args.firstOrNull()) {
+        "openai" -> simpleOpenAIExecutor(openAIApiToken)
+        "mistral" -> simpleOllamaAIExecutor()
+        else -> throw IllegalArgumentException("Invalid argument: ${args.firstOrNull()}")
+    }
 
+    //select model based on command line parameter
+    val model = when (args.firstOrNull()) {
+        "openai" -> OpenAIModels.Chat.GPT4o
+        "mistral" -> LLModel(
+            provider = LLMProvider.Ollama,
+            id = "mistral:latest",
+            capabilities = listOf(
+                LLMCapability.Temperature,
+                LLMCapability.Schema.JSON.Simple,
+                LLMCapability.Tools
+            )
+        )
+
+        else -> throw IllegalArgumentException("Invalid argument: ${args.firstOrNull()}")
+    }
+
+
+    // Wait for the server to start
+    Thread.sleep(3500)
 
     try {
         runBlocking {
@@ -31,8 +57,8 @@ fun main() {
 
                 // Create the runner
                 val agent = AIAgent(
-                    executor = simpleOpenAIExecutor(openAIApiToken),
-                    llmModel = OpenAIModels.Chat.GPT4o,
+                    executor = executor,
+                    llmModel = model,
                     toolRegistry = toolRegistry,
                 )
 
