@@ -11,8 +11,11 @@ import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResult
 import ai.koog.agents.core.dsl.extension.onAssistantMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
 import ai.koog.agents.core.environment.ReceivedToolResult
+import ai.koog.agents.features.common.message.FeatureMessage
+import ai.koog.agents.features.common.message.FeatureMessageProcessor
 import ai.koog.agents.features.eventHandler.feature.EventHandler
 import ai.koog.agents.features.tokenizer.feature.tokenizer
+import ai.koog.agents.features.tracing.feature.Tracing
 import ai.koog.prompt.dsl.Prompt
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOllamaAIExecutor
@@ -23,37 +26,34 @@ import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.llm.OllamaModels
+import com.sun.tools.javac.tree.TreeInfo.args
 import kotlinx.coroutines.runBlocking
 import org.example.kagent.mcp.McpIntegration
 import kotlin.uuid.ExperimentalUuidApi
 
+//            val llmClient = OllamaClient("http://localhost:11434")  //TODO
+//            runBlocking { llmClient.getModelOrNull("mistral") }!!.toLLModel()
 @OptIn(ExperimentalUuidApi::class)
 fun createCodingAgent(selector: String): AIAgent {
     val executor = when (selector) {
-        "openai" -> simpleOpenAIExecutor(
-            System.getenv("OPENAI_API_KEY") ?: throw IllegalStateException("OPENAI_API_KEY not set")
-        )
-
-        "ollama" -> simpleOllamaAIExecutor()
-        else -> throw IllegalArgumentException("Unknown executor selector: $selector")
+        "openai" -> simpleOpenAIExecutor(System.getenv("OPENAI_API_KEY") ?: throw IllegalStateException("OPENAI_API_KEY not set"))
+        "mistral" -> simpleOllamaAIExecutor()
+        else -> throw IllegalArgumentException("Invalid argument: ${selector}")
     }
 
     val model = when (selector) {
         "openai" -> OpenAIModels.Chat.GPT4o
-        "ollama" -> {
-//            val llmClient = OllamaClient("http://localhost:11434")  //TODO
-//            runBlocking { llmClient.getModelOrNull("mistral") }!!.toLLModel()
-            LLModel(
-                provider = LLMProvider.Ollama,
-                id = "mistral",
-                capabilities = listOf(
-                    LLMCapability.Temperature,
-                    LLMCapability.Schema.JSON.Simple,
-                    LLMCapability.Tools
-                )
+        "mistral" -> LLModel(
+            provider = LLMProvider.Ollama,
+            id = "mistral:latest",
+            capabilities = listOf(
+                LLMCapability.Temperature,
+                LLMCapability.ToolChoice,
+                LLMCapability.Schema.JSON.Simple,
+                LLMCapability.Tools
             )
-        }
-        else -> throw IllegalArgumentException("Unknown executor selector: $selector")
+        )
+        else -> throw IllegalArgumentException("Invalid argument: ${selector}")
     }
 
     // Create an agent strategy
@@ -90,7 +90,7 @@ fun createCodingAgent(selector: String): AIAgent {
                 - Follow Kotlin naming conventions
                 - Add appropriate documentation
                 
-                ***IMPORTANT*** ALWAYS USE TOOLS TO IMPLEMENT THE TASK!!!
+                ***IMPORTANT*** YOU MUST USE TOOLS TO IMPLEMENT THE TASK!!!
                 ***IMPORTANT*** DON'T CHAT WITH ME BEFORE YOU FINISH
                 
                 Always explain what you're doing at each step and provide clear feedback about success or failure.
@@ -129,6 +129,17 @@ fun createCodingAgent(selector: String): AIAgent {
                 onAgentRunError { strategyName, uuid, exception
                     -> println("🚨 Error occurred for strategy: $strategyName [$uuid]: $exception")
                 }
+            }
+            install(Tracing) {
+                addMessageProcessor(object : FeatureMessageProcessor() {
+                    override suspend fun processMessage(message: FeatureMessage) {
+                        println(">>>>> TRACING: $message")
+                    }
+
+                    override suspend fun close() {
+                        TODO("Not yet implemented")
+                    }
+                })
             }
         }
     )
