@@ -26,30 +26,24 @@ import ai.koog.agents.features.common.message.FeatureMessageProcessor
 import ai.koog.agents.features.eventHandler.feature.handleEvents
 import ai.koog.agents.features.tracing.feature.Tracing
 import ai.koog.prompt.dsl.prompt
+import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
+import ai.koog.prompt.executor.clients.google.GoogleModels
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.SingleLLMPromptExecutor
+import ai.koog.prompt.executor.llms.all.simpleAnthropicExecutor
+import ai.koog.prompt.executor.llms.all.simpleGoogleAIExecutor
+import ai.koog.prompt.executor.llms.all.simpleOllamaAIExecutor
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.prompt.executor.ollama.client.OllamaClient
 import ai.koog.prompt.executor.ollama.client.toLLModel
+import ai.koog.prompt.llm.LLModel
 import kotlinx.coroutines.runBlocking
 import org.example.kagent.mcp.McpIntegration
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
 fun createCodingAgent(selector: String): AIAgent {
-    val (executor, model) = when (selector) {
-        "openai" -> simpleOpenAIExecutor(
-            System.getenv("OPENAI_API_KEY") ?: throw IllegalStateException("OPENAI_API_KEY not set")
-        ) to OpenAIModels.Chat.GPT4o
-
-        "mistral" -> {
-            val client = OllamaClient()
-            val model = runBlocking { client.getModelOrNull("mistral")!!.toLLModel() }
-            SingleLLMPromptExecutor(client) to model
-        }
-
-        else -> throw IllegalArgumentException("Invalid argument: ${selector}")
-    }
+    val (executor, model) = executorAndModel(selector)
 
     // Create an agent strategy
     val strategy = createCodingAgentStrategy()
@@ -139,6 +133,48 @@ fun createCodingAgent(selector: String): AIAgent {
             })
         }
     }
+}
+
+private fun executorAndModel(selector: String): Pair<SingleLLMPromptExecutor, LLModel> = when (selector) {
+    "openai" -> simpleOpenAIExecutor(
+        System.getenv("OPENAI_API_KEY") ?: throw IllegalStateException("OPENAI_API_KEY not set")
+    ) to OpenAIModels.Chat.GPT4o
+
+    "mistral" -> {
+        val client = OllamaClient()
+        val model = runBlocking { client.getModelOrNull("mistral")!!.toLLModel() }
+        SingleLLMPromptExecutor(client) to model
+    }
+
+    "llama" -> {
+        val client = OllamaClient()
+        val model = runBlocking { client.getModelOrNull("llama4")!!.toLLModel() }
+        SingleLLMPromptExecutor(client) to model
+    }
+
+    "qwen" -> {
+        val client = OllamaClient()
+        val model = runBlocking { client.getModelOrNull("qwen3")!!.toLLModel() }
+        SingleLLMPromptExecutor(client) to model
+    }
+
+    "sonnet37" -> simpleAnthropicExecutor(
+        System.getenv("ANTHROPIC_API_KEY") ?: throw IllegalStateException("ANTHROPIC_API_KEY not set")
+    ) to AnthropicModels.Sonnet_3_7
+
+    "sonnet4" -> simpleAnthropicExecutor(
+        System.getenv("ANTHROPIC_API_KEY") ?: throw IllegalStateException("ANTHROPIC_API_KEY not set")
+    ) to AnthropicModels.Sonnet_4
+
+    "gemini2flash" -> simpleGoogleAIExecutor(
+        System.getenv("GOOGLE_API_KEY") ?: throw IllegalStateException("GOOGLE_API_KEY not set")
+    ) to GoogleModels.Gemini2_0Flash
+
+    "gemini25pro" -> simpleGoogleAIExecutor(
+        System.getenv("GOOGLE_API_KEY") ?: throw IllegalStateException("GOOGLE_API_KEY not set")
+    ) to GoogleModels.Gemini2_5ProPreview0506
+
+    else -> throw IllegalArgumentException("Invalid argument: ${selector}")
 }
 
 fun createCodingAgentStrategy() = strategy("Coding Assistant") {
