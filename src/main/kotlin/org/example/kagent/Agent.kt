@@ -47,8 +47,6 @@ import kotlinx.coroutines.runBlocking
 import org.example.kagent.mcp.McpIntegration
 import kotlin.uuid.ExperimentalUuidApi
 
-//            val llmClient = OllamaClient("http://localhost:11434")  //TODO
-//            runBlocking { llmClient.getModelOrNull("mistral") }!!.toLLModel()
 @OptIn(ExperimentalUuidApi::class)
 fun createCodingAgent(selector: String): AIAgent {
     val executor = when (selector) {
@@ -57,6 +55,7 @@ fun createCodingAgent(selector: String): AIAgent {
         else -> throw IllegalArgumentException("Invalid argument: ${selector}")
     }
 
+    // val model = runBlocking { llmClient.getModelOrNull("mistral") }!!.toLLModel()
     val model = when (selector) {
         "openai" -> OpenAIModels.Chat.GPT4o
         "mistral" -> LLModel(
