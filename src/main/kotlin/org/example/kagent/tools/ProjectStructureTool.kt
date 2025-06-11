@@ -16,63 +16,48 @@
 
 package org.example.kagent.tools
 
-import ai.koog.agents.core.tools.Tool
-import ai.koog.agents.core.tools.ToolDescriptor
-import ai.koog.agents.core.tools.ToolParameterDescriptor
-import ai.koog.agents.core.tools.ToolParameterType
 import ai.koog.agents.core.tools.ToolResult
+import ai.koog.agents.core.tools.annotations.LLMDescription
+import ai.koog.agents.core.tools.annotations.Tool
 import kotlinx.serialization.Serializable
 import java.io.File
 
-object ProjectStructureTool : Tool<ProjectStructureTool.Args, ToolResult>() {
-    @kotlinx.serialization.Serializable
-    data class Args(
-        val projectName: String,
-        val baseDir: String = ".",
-    ) : Tool.Args
+@Serializable
+data class ProjectStructureResult(
+    val success: Boolean,
+    val message: String,
+    val structure: Map<String, String>,
+) : ToolResult {
+    override fun toStringDefault(): String = message
+}
 
-    @Serializable
-    data class Result(
-        val success: Boolean,
-        val message: String,
-        val structure: Map<String, String>,
-    ) : ToolResult {
-        override fun toStringDefault(): String = message
-    }
+@Tool
+@LLMDescription("Create a basic Kotlin project structure")
+suspend fun projectStructure(
+    @LLMDescription("Name of the project")
+    projectName: String,
+    @LLMDescription("Base directory for project")
+    baseDir: String = "."
+): ProjectStructureResult {
+    return try {
+        val projectDir = File(baseDir, projectName)
+        val srcDir = File(projectDir, "src/main/kotlin")
+        val testDir = File(projectDir, "src/test/kotlin")
+        val buildDir = File(projectDir, "build/classes")
 
-    override val argsSerializer = Args.serializer()
-    override val descriptor = ToolDescriptor(
-        name = "project_structure",
-        description = "Create a basic Kotlin project structure",
-        requiredParameters = listOf(
-            ToolParameterDescriptor("projectName", "Name of the project", ToolParameterType.String)
-        ),
-        optionalParameters = listOf(
-            ToolParameterDescriptor("baseDir", "Base directory for project", ToolParameterType.String)
+        srcDir.mkdirs()
+        testDir.mkdirs()
+        buildDir.mkdirs()
+
+        val structure = mapOf(
+            "project" to projectDir.absolutePath,
+            "src" to srcDir.absolutePath,
+            "test" to testDir.absolutePath,
+            "build" to buildDir.absolutePath
         )
-    )
 
-    override suspend fun execute(args: Args): Result {
-        return try {
-            val projectDir = File(args.baseDir, args.projectName)
-            val srcDir = File(projectDir, "src/main/kotlin")
-            val testDir = File(projectDir, "src/test/kotlin")
-            val buildDir = File(projectDir, "build/classes")
-
-            srcDir.mkdirs()
-            testDir.mkdirs()
-            buildDir.mkdirs()
-
-            val structure = mapOf(
-                "project" to projectDir.absolutePath,
-                "src" to srcDir.absolutePath,
-                "test" to testDir.absolutePath,
-                "build" to buildDir.absolutePath
-            )
-
-            Result(true, "Project structure created for ${args.projectName}", structure)
-        } catch (e: Exception) {
-            Result(false, "Failed to create project structure: ${e.message}", emptyMap())
-        }
+        ProjectStructureResult(true, "Project structure created for ${projectName}", structure)
+    } catch (e: Exception) {
+        ProjectStructureResult(false, "Failed to create project structure: ${e.message}", emptyMap())
     }
 }

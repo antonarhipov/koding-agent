@@ -1,11 +1,12 @@
 package org.example.kagent.mcp
 
 import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.agents.core.tools.reflect.tool
 import ai.koog.agents.mcp.McpToolRegistryProvider
-import org.example.kagent.tools.FileOperationsTool
-import org.example.kagent.tools.KotlinCompilerTool
-import org.example.kagent.tools.ProjectStructureTool
-import org.example.kagent.tools.TestRunnerTool
+import org.example.kagent.tools.fileOperations
+import org.example.kagent.tools.kotlinCompiler
+import org.example.kagent.tools.projectStructure
+import org.example.kagent.tools.testRunner
 
 object McpIntegration {
     
@@ -54,10 +55,10 @@ object McpIntegration {
     private fun createFallbackToolRegistry(): ToolRegistry {
         println("🛠️  Using custom Kotlin development tools")
         return ToolRegistry {
-            tool(ProjectStructureTool)
-            tool(FileOperationsTool)
-            tool(KotlinCompilerTool)
-            tool(TestRunnerTool)
+            tool(::projectStructure)
+            tool(::fileOperations)
+            tool(::kotlinCompiler)
+            tool(::testRunner)
         }
     }
 }
