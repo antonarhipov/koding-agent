@@ -20,60 +20,33 @@ import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.dsl.builder.forwardTo
 import ai.koog.agents.core.dsl.builder.strategy
-import ai.koog.agents.core.dsl.extension.nodeExecuteTool
-import ai.koog.agents.core.dsl.extension.nodeLLMCompressHistory
-import ai.koog.agents.core.dsl.extension.nodeLLMRequest
-import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResult
-import ai.koog.agents.core.dsl.extension.onAssistantMessage
-import ai.koog.agents.core.dsl.extension.onToolCall
-import ai.koog.agents.core.environment.ReceivedToolResult
+import ai.koog.agents.core.dsl.extension.*
 import ai.koog.agents.features.common.message.FeatureMessage
 import ai.koog.agents.features.common.message.FeatureMessageProcessor
-import ai.koog.agents.features.eventHandler.feature.EventHandler
 import ai.koog.agents.features.eventHandler.feature.handleEvents
-import ai.koog.agents.features.tokenizer.feature.tokenizer
 import ai.koog.agents.features.tracing.feature.Tracing
-import ai.koog.prompt.dsl.Prompt
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
-import ai.koog.prompt.executor.llms.all.simpleOllamaAIExecutor
+import ai.koog.prompt.executor.llms.SingleLLMPromptExecutor
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.prompt.executor.ollama.client.OllamaClient
 import ai.koog.prompt.executor.ollama.client.toLLModel
-import ai.koog.prompt.llm.LLMCapability
-import ai.koog.prompt.llm.LLMProvider
-import ai.koog.prompt.llm.LLModel
-import ai.koog.prompt.llm.OllamaModels
-import ai.koog.prompt.markdown.markdown
-import com.sun.tools.javac.tree.TreeInfo.args
 import kotlinx.coroutines.runBlocking
 import org.example.kagent.mcp.McpIntegration
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
 fun createCodingAgent(selector: String): AIAgent {
-    val executor = when (selector) {
+    val (executor, model) = when (selector) {
         "openai" -> simpleOpenAIExecutor(
             System.getenv("OPENAI_API_KEY") ?: throw IllegalStateException("OPENAI_API_KEY not set")
-        )
+        ) to OpenAIModels.Chat.GPT4o
 
-        "mistral" -> simpleOllamaAIExecutor()
-        else -> throw IllegalArgumentException("Invalid argument: ${selector}")
-    }
-
-    // val model = runBlocking { llmClient.getModelOrNull("mistral") }!!.toLLModel()
-    val model = when (selector) {
-        "openai" -> OpenAIModels.Chat.GPT4o
-        "mistral" -> LLModel(
-            provider = LLMProvider.Ollama,
-            id = "mistral:latest",
-            capabilities = listOf(
-                LLMCapability.Temperature,
-                LLMCapability.ToolChoice,
-                LLMCapability.Schema.JSON.Simple,
-                LLMCapability.Tools
-            )
-        )
+        "mistral" -> {
+            val client = OllamaClient()
+            val model = runBlocking { client.getModelOrNull("mistral")!!.toLLModel() }
+            SingleLLMPromptExecutor(client) to model
+        }
 
         else -> throw IllegalArgumentException("Invalid argument: ${selector}")
     }
