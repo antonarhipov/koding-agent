@@ -16,72 +16,57 @@
 
 package org.example.kagent.tools
 
-import ai.koog.agents.core.tools.Tool
-import ai.koog.agents.core.tools.ToolDescriptor
-import ai.koog.agents.core.tools.ToolParameterDescriptor
-import ai.koog.agents.core.tools.ToolParameterType
 import ai.koog.agents.core.tools.ToolResult
+import ai.koog.agents.core.tools.annotations.LLMDescription
+import ai.koog.agents.core.tools.annotations.Tool
 import kotlinx.serialization.Serializable
 import java.io.File
 
-object TestRunnerTool : Tool<TestRunnerTool.Args, ToolResult>() {
-    @kotlinx.serialization.Serializable
-    data class Args(
-        val testFile: String,
-        val mainClass: String? = null
-    ) : Tool.Args
+@Serializable
+data class TestRunnerResult(
+    val success: Boolean,
+    val message: String,
+    val testResults: List<String> = emptyList()
+) : ToolResult {
+    override fun toStringDefault(): String = message
+}
 
-    @Serializable
-    data class Result(
-        val success: Boolean,
-        val message: String,
-        val testResults: List<String> = emptyList()
-    ) : ToolResult {
-        override fun toStringDefault(): String = message
-    }
+@Tool
+@LLMDescription("Run Kotlin tests and return results")
+suspend fun testRunner(
+    @LLMDescription("Path to test file")
+    testFile: String,
+    @LLMDescription("Main class to run")
+    mainClass: String? = null
+): TestRunnerResult {
+    return try {
+        val className = mainClass ?: extractClassName(testFile)
 
-    override val argsSerializer = Args.serializer()
-    override val descriptor = ToolDescriptor(
-        name = "test_runner",
-        description = "Run Kotlin tests and return results",
-        requiredParameters = listOf(
-            ToolParameterDescriptor("testFile", "Path to test file", ToolParameterType.String)
-        ),
-        optionalParameters = listOf(
-            ToolParameterDescriptor("mainClass", "Main class to run", ToolParameterType.String)
+        val processBuilder = ProcessBuilder(
+            "kotlin",
+            "-classpath", "build/classes:.",
+            className
         )
-    )
 
-    override suspend fun execute(args: Args): Result {
-        return try {
-            val className = args.mainClass ?: extractClassName(args.testFile)
+        processBuilder.redirectErrorStream(true)
+        val process = processBuilder.start()
 
-            val processBuilder = ProcessBuilder(
-                "kotlin",
-                "-classpath", "build/classes:.",
-                className
-            )
+        val output = process.inputStream.bufferedReader().use { it.readText() }
+        val exitCode = process.waitFor()
 
-            processBuilder.redirectErrorStream(true)
-            val process = processBuilder.start()
+        val results = output.lines().filter { it.isNotBlank() }
 
-            val output = process.inputStream.bufferedReader().use { it.readText() }
-            val exitCode = process.waitFor()
-
-            val results = output.lines().filter { it.isNotBlank() }
-
-            Result(
-                success = exitCode == 0,
-                message = if (exitCode == 0) "Tests passed" else "Tests failed",
-                testResults = results
-            )
-        } catch (e: Exception) {
-            Result(false, "Test execution error: ${e.message}", emptyList())
-        }
+        TestRunnerResult(
+            success = exitCode == 0,
+            message = if (exitCode == 0) "Tests passed" else "Tests failed",
+            testResults = results
+        )
+    } catch (e: Exception) {
+        TestRunnerResult(false, "Test execution error: ${e.message}", emptyList())
     }
+}
 
-    private fun extractClassName(filePath: String): String {
-        val fileName = File(filePath).nameWithoutExtension
-        return "${fileName}Kt"
-    }
+private fun extractClassName(filePath: String): String {
+    val fileName = File(filePath).nameWithoutExtension
+    return "${fileName}Kt"
 }

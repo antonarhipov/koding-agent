@@ -30,9 +30,11 @@ import ai.koog.agents.core.environment.ReceivedToolResult
 import ai.koog.agents.features.common.message.FeatureMessage
 import ai.koog.agents.features.common.message.FeatureMessageProcessor
 import ai.koog.agents.features.eventHandler.feature.EventHandler
+import ai.koog.agents.features.eventHandler.feature.handleEvents
 import ai.koog.agents.features.tokenizer.feature.tokenizer
 import ai.koog.agents.features.tracing.feature.Tracing
 import ai.koog.prompt.dsl.Prompt
+import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOllamaAIExecutor
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
@@ -42,6 +44,7 @@ import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.llm.OllamaModels
+import ai.koog.prompt.markdown.markdown
 import com.sun.tools.javac.tree.TreeInfo.args
 import kotlinx.coroutines.runBlocking
 import org.example.kagent.mcp.McpIntegration
@@ -50,7 +53,10 @@ import kotlin.uuid.ExperimentalUuidApi
 @OptIn(ExperimentalUuidApi::class)
 fun createCodingAgent(selector: String): AIAgent {
     val executor = when (selector) {
-        "openai" -> simpleOpenAIExecutor(System.getenv("OPENAI_API_KEY") ?: throw IllegalStateException("OPENAI_API_KEY not set"))
+        "openai" -> simpleOpenAIExecutor(
+            System.getenv("OPENAI_API_KEY") ?: throw IllegalStateException("OPENAI_API_KEY not set")
+        )
+
         "mistral" -> simpleOllamaAIExecutor()
         else -> throw IllegalArgumentException("Invalid argument: ${selector}")
     }
@@ -68,6 +74,7 @@ fun createCodingAgent(selector: String): AIAgent {
                 LLMCapability.Tools
             )
         )
+
         else -> throw IllegalArgumentException("Invalid argument: ${selector}")
     }
 
@@ -76,7 +83,7 @@ fun createCodingAgent(selector: String): AIAgent {
 
     // Configure the agent with a detailed system prompt
     val agentConfig = AIAgentConfig(
-        prompt = Prompt.build("coding-assistant") {
+        prompt = prompt("coding-assistant") {
             system(
                 """
                 You are an expert Kotlin coding assistant that can help users with:
@@ -126,38 +133,39 @@ fun createCodingAgent(selector: String): AIAgent {
         strategy = strategy,
         agentConfig = agentConfig,
         toolRegistry = toolRegistry,
-        installFeatures = {
-            install(EventHandler) {
-                onBeforeAgentStarted { strategy, _ ->
-                    println("🚀 Starting coding session with strategy: ${strategy.name}")
-                }
-                onAgentFinished { strategyName, result ->
-                    println("✅ Coding session completed: $strategyName")
-                    println("📋 Final result: $result")
-                }
-                onToolCall { tool, args ->
-                    println("🔧 Executing tool: ${tool.name}($args)")
-                }
-                onToolCallResult { tool, args, result ->
-                    println("✅ Tool completed: ${tool.name}($args): $result")
-                }
-                onAgentRunError { strategyName, uuid, exception
-                    -> println("🚨 Error occurred for strategy: $strategyName [$uuid]: $exception")
-                }
+    ) {
+        handleEvents {
+            onBeforeAgentStarted { strategy, _ ->
+                println("🚀 Starting coding session with strategy: ${strategy.name}")
             }
-            install(Tracing) {
-                addMessageProcessor(object : FeatureMessageProcessor() {
-                    override suspend fun processMessage(message: FeatureMessage) {
-                        println(">>>>> TRACING: $message")
-                    }
-
-                    override suspend fun close() {
-                        TODO("Not yet implemented")
-                    }
-                })
+            onAgentFinished { strategyName, result ->
+                println("✅ Coding session completed: $strategyName")
+                println("📋 Final result: $result")
+            }
+            onToolCall { tool, args ->
+                println("🔧 Executing tool: ${tool.name}($args)")
+            }
+            onToolCallResult { tool, args, result ->
+                println("✅ Tool completed: ${tool.name}($args): $result")
+            }
+            onAgentRunError { strategyName, uuid, exception
+                ->
+                println("🚨 Error occurred for strategy: $strategyName [$uuid]: $exception")
             }
         }
-    )
+
+        install(Tracing) {
+            addMessageProcessor(object : FeatureMessageProcessor() {
+                override suspend fun processMessage(message: FeatureMessage) {
+                    println(">>>>> TRACING: $message")
+                }
+
+                override suspend fun close() {
+                    TODO("Not yet implemented")
+                }
+            })
+        }
+    }
 }
 
 fun createCodingAgentStrategy() = strategy("Coding Assistant") {

@@ -16,67 +16,52 @@
 
 package org.example.kagent.tools
 
-import ai.koog.agents.core.tools.Tool
-import ai.koog.agents.core.tools.ToolDescriptor
-import ai.koog.agents.core.tools.ToolParameterDescriptor
-import ai.koog.agents.core.tools.ToolParameterType
 import ai.koog.agents.core.tools.ToolResult
+import ai.koog.agents.core.tools.annotations.LLMDescription
+import ai.koog.agents.core.tools.annotations.Tool
 import kotlinx.serialization.Serializable
 import java.io.File
 
-object KotlinCompilerTool : Tool<KotlinCompilerTool.Args, ToolResult>() {
-    @kotlinx.serialization.Serializable
-    data class Args(
-        val sourceFile: String,
-        val outputDir: String = "build/classes",
-    ) : Tool.Args
+@Serializable
+data class KotlinCompilerResult(
+    val success: Boolean,
+    val message: String,
+    val errors: List<String> = emptyList(),
+) : ToolResult {
+    override fun toStringDefault(): String = message
+}
 
-    @Serializable
-    data class Result(
-        val success: Boolean,
-        val message: String,
-        val errors: List<String> = emptyList(),
-    ) : ToolResult {
-        override fun toStringDefault(): String = message
-    }
+@Tool
+@LLMDescription("Compile Kotlin source files")
+suspend fun kotlinCompiler(
+    @LLMDescription("Path to Kotlin source file")
+    sourceFile: String,
+    @LLMDescription("Output directory for compiled classes")
+    outputDir: String = "build/classes"
+): KotlinCompilerResult {
+    return try {
+        val outputDirFile = File(outputDir)
+        outputDirFile.mkdirs()
 
-    override val argsSerializer = Args.serializer()
-    override val descriptor = ToolDescriptor(
-        name = "kotlin_compiler",
-        description = "Compile Kotlin source files",
-        requiredParameters = listOf(
-            ToolParameterDescriptor("sourceFile", "Path to Kotlin source file", ToolParameterType.String)
-        ),
-        optionalParameters = listOf(
-            ToolParameterDescriptor("outputDir", "Output directory for compiled classes", ToolParameterType.String)
+        val processBuilder = ProcessBuilder(
+            "kotlinc",
+            sourceFile,
+            "-d", outputDir
         )
-    )
 
-    override suspend fun execute(args: Args): Result {
-        return try {
-            val outputDir = File(args.outputDir)
-            outputDir.mkdirs()
+        processBuilder.redirectErrorStream(true)
+        val process = processBuilder.start()
 
-            val processBuilder = ProcessBuilder(
-                "kotlinc",
-                args.sourceFile,
-                "-d", args.outputDir
-            )
+        val output = process.inputStream.bufferedReader().use { it.readText() }
+        val exitCode = process.waitFor()
 
-            processBuilder.redirectErrorStream(true)
-            val process = processBuilder.start()
-
-            val output = process.inputStream.bufferedReader().use { it.readText() }
-            val exitCode = process.waitFor()
-
-            if (exitCode == 0) {
-                Result(true, "Compilation successful", emptyList())
-            } else {
-                val errors = output.lines().filter { it.isNotBlank() }
-                Result(false, "Compilation failed", errors)
-            }
-        } catch (e: Exception) {
-            Result(false, "Compilation error: ${e.message}", listOf(e.message ?: "Unknown error"))
+        if (exitCode == 0) {
+            KotlinCompilerResult(true, "Compilation successful", emptyList())
+        } else {
+            val errors = output.lines().filter { it.isNotBlank() }
+            KotlinCompilerResult(false, "Compilation failed", errors)
         }
+    } catch (e: Exception) {
+        KotlinCompilerResult(false, "Compilation error: ${e.message}", listOf(e.message ?: "Unknown error"))
     }
 }
