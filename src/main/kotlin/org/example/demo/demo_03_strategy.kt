@@ -73,7 +73,7 @@ fun main(args: Array<String>) = runBlocking {
         }
     }
 
-    val mathProblemToSolve = "Calculate the sum of numbers: 347, 551, 924, 128"
+    val mathProblemToSolve = "I had 5 apples. I ate 3 apples. My friend gave me 2 more apples. How many apples do I have left?"
     agent.run(mathProblemToSolve)
 }
 
@@ -84,14 +84,12 @@ data class MathResult(val total: Int) : ToolResult {
 }
 
 @Tool
-@LLMDescription("calculate the sumb of numbers")
+@LLMDescription("calculate the sum of numbers")
 suspend fun mathTool(
     @LLMDescription("list of numbers")
     numbers: List<Int>,
 ): MathResult {
-    println(">>>>>>>>>>>> TRACE: mathTool " + numbers.joinToString())  
-    
-    
+    println(">>>>>>>>>>>> TRACE: mathTool " + numbers.joinToString())
   return MathResult(numbers.sumOf { it })  
 } 
 
