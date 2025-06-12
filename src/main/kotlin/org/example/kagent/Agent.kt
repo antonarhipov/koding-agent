@@ -36,6 +36,8 @@ import ai.koog.prompt.executor.llms.all.simpleOllamaAIExecutor
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.prompt.executor.ollama.client.OllamaClient
 import ai.koog.prompt.executor.ollama.client.toLLModel
+import ai.koog.prompt.llm.LLMCapability
+import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
 import kotlinx.coroutines.runBlocking
 import org.example.kagent.mcp.McpIntegration
@@ -154,7 +156,15 @@ private fun executorAndModel(selector: String): Pair<SingleLLMPromptExecutor, LL
 
     "qwen" -> {
         val client = OllamaClient()
-        val model = runBlocking { client.getModelOrNull("qwen3")!!.toLLModel() }
+        val model = LLModel(
+            provider = LLMProvider.Ollama,
+            id = "qwen3:latest",
+            capabilities = listOf(
+                LLMCapability.Temperature,
+                LLMCapability.Schema.JSON.Simple,
+                LLMCapability.Tools
+            )
+        )
         SingleLLMPromptExecutor(client) to model
     }
 
