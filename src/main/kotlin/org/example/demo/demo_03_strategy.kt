@@ -94,12 +94,11 @@ suspend fun mathTool(
 } 
 
 
-fun createCodingAgentStrategy() = strategy("Coding Assistant") {
+fun createCodingAgentStrategy() = strategy("Assistant Workflow") {
     // Define nodes for the coding workflow
     val nodeAnalyzeRequest by nodeLLMRequest()
     val nodeExecuteTool by nodeExecuteTool()
     val nodeSendToolResult by nodeLLMSendToolResult()
-//    val compressNode by nodeLLMCompressHistory<ReceivedToolResult>()
 
     // Define the workflow edges
     // Start -> Analyze user request

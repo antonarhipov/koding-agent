@@ -1,7 +1,16 @@
-package org.example.kagent.mcp
+package org.example.demo
 
 import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.core.agent.config.AIAgentConfig
+import ai.koog.agents.core.dsl.builder.forwardTo
+import ai.koog.agents.core.dsl.builder.strategy
+import ai.koog.agents.core.dsl.extension.nodeExecuteTool
+import ai.koog.agents.core.dsl.extension.nodeLLMRequest
+import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResult
+import ai.koog.agents.core.dsl.extension.onAssistantMessage
+import ai.koog.agents.core.dsl.extension.onToolCall
 import ai.koog.agents.mcp.McpToolRegistryProvider
+import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOllamaAIExecutor
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
@@ -41,7 +50,6 @@ fun main(args: Array<String>) {
         else -> throw IllegalArgumentException("Invalid argument: ${args.firstOrNull()}")
     }
 
-
     // Wait for the server to start
     Thread.sleep(3500)
 
@@ -58,6 +66,7 @@ fun main(args: Array<String>) {
                 // Create the runner
                 val agent = AIAgent(
                     executor = executor,
+                    strategy = codingAgentStrategy(),
                     llmModel = model,
                     toolRegistry = toolRegistry,
                 )
@@ -68,12 +77,37 @@ fun main(args: Array<String>) {
                     request + "You can only call tools. Use JetBrains IDE tools to complete the task"
                 )
             } catch (e: Exception) {
-                println("Error connecting to  MCP server: ${e.message}")
+                println("Error connecting to MCP server: ${e.message}")
                 e.printStackTrace()
             }
         }
     } finally {
-        // Shutdown the curl process
         println("Closing connection to MCP server")
+        process.destroy()
     }
+}
+
+fun codingAgentStrategy() = strategy("Coding Assistant") {
+    // Define nodes for the coding workflow
+    val nodeAnalyzeRequest by nodeLLMRequest()
+    val nodeExecuteTool by nodeExecuteTool()
+    val nodeSendToolResult by nodeLLMSendToolResult()
+//    val compressNode by nodeLLMCompressHistory<ReceivedToolResult>()
+
+    // Define the workflow edges
+    // Start -> Analyze user request
+    edge(nodeStart forwardTo nodeAnalyzeRequest) // Analyze request -> Finish (if no tools needed)
+    edge(nodeAnalyzeRequest forwardTo nodeFinish onAssistantMessage { true })
+
+    // Analyze request -> Execute tool (if tool call is made)
+    edge(nodeAnalyzeRequest forwardTo nodeExecuteTool onToolCall { true })
+
+    // Execute tool -> Send a tool result back to LLM
+    edge(nodeExecuteTool forwardTo nodeSendToolResult)
+
+    // Send tool result -> Finish (if final response)
+    edge(nodeSendToolResult forwardTo nodeFinish onAssistantMessage { true })
+
+    // Send tool result -> Execute another tool (for chained operations)
+    edge(nodeSendToolResult forwardTo nodeExecuteTool onToolCall { true })
 }
