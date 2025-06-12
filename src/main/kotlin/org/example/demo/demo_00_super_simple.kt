@@ -30,7 +30,7 @@ fun main() = runBlocking {
         llmModel = OpenAIModels.Chat.GPT4o,
         toolRegistry = toolRegistry,
     )
-    agent.run("Tell me a friendly programmers' joke about Java?")
+    agent.run("Tell me a friendly programmers' joke about Amsterdam?")
 }
 
 
