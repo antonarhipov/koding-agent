@@ -65,8 +65,8 @@ fun main(args: Array<String>) = runBlocking {
 }
 
 @Serializable
-data class TemperatureResult(val total: Int) : ToolResult {
-    override fun toStringDefault(): String = "Total: $total"
+data class TemperatureResult(val value: Int) : ToolResult {
+    override fun toStringDefault(): String = "Temperature: $value"
 }
 
 @Tool
