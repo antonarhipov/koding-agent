@@ -20,15 +20,15 @@ import ai.koog.agents.core.tools.reflect.tool
 
 fun main(args: Array<String>) = runBlocking {
     //select executor based on command line parameter
-    val (executor, model) = when (args.firstOrNull() ?: "openai") {
+    val (executor, model) = when (args.firstOrNull() ?: "devstral") {
         "openai" -> {
             val openAIApiToken = System.getenv("OPENAI_API_KEY") ?: error("OPENAI_API_KEY environment variable not set")
             simpleOpenAIExecutor(openAIApiToken) to OpenAIModels.Chat.GPT4o
         }
 
-        "mistral" -> {
+        "devstral" -> {
             val client = OllamaClient()
-            val model = runBlocking { client.getModelOrNull("mistral")!!.toLLModel() }
+            val model = runBlocking { client.getModelOrNull("devstral")!!.toLLModel() }
             SingleLLMPromptExecutor(client) to model
         }
 
@@ -49,6 +49,7 @@ fun main(args: Array<String>) = runBlocking {
             
             ***IMPORTANT*** YOU MUST USE TOOLS TO IMPLEMENT THE TASK!!!
             ***IMPORTANT*** DON'T CHAT WITH ME BEFORE YOU FINISH
+            ***IMPORTANT*** USE THE SAYTOOL TO PROVIDE THE ANSWER TO THE USER
         """.trimIndent(),
         llmModel = model,
         toolRegistry = toolRegistry,
@@ -71,7 +72,10 @@ data class TemperatureResult(val value: Int) : ToolResult {
 
 @Tool
 @LLMDescription("provide current temperature")
-suspend fun temperatureTool() = TemperatureResult(100000)
+suspend fun temperatureTool(): TemperatureResult {
+    println(">>>>>>>>>>>> TRACE: temperatureTool")
+    return TemperatureResult(100000)
+}
 
 
 
