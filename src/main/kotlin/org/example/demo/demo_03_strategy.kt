@@ -24,18 +24,22 @@ import ai.koog.prompt.executor.ollama.client.toLLModel
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import ai.koog.agents.core.tools.reflect.tool
+import ai.koog.prompt.llm.LLMCapability
+import ai.koog.prompt.llm.LLMProvider
+import ai.koog.prompt.llm.LLModel
+import org.example.kagent.createCodingAgentStrategy
 
 fun main(args: Array<String>) = runBlocking {
     //select executor based on command line parameter
-    val (executor, model) = when (args.firstOrNull() ?: "openai") {
+    val (executor, model) = when (args.firstOrNull() ?: "devstral") {
         "openai" -> {
             val openAIApiToken = System.getenv("OPENAI_API_KEY") ?: error("OPENAI_API_KEY environment variable not set")
             simpleOpenAIExecutor(openAIApiToken) to OpenAIModels.Chat.GPT4o
         }
 
-        "mistral" -> {
+        "devstral" -> {
             val client = OllamaClient()
-            val model = runBlocking { client.getModelOrNull("mistral")!!.toLLModel() }
+            val model = runBlocking { client.getModelOrNull("devstral")!!.toLLModel() }
             SingleLLMPromptExecutor(client) to model
         }
 
@@ -55,11 +59,13 @@ fun main(args: Array<String>) = runBlocking {
             1. Analyze the request and determine required tools.
             2. Execute tools to perform the changes.
             3. Do not engage in conversation before completing the task.
+            4. Say the final result to the user.
 
             MANDATORY INSTRUCTIONS:
             - Only use provided tools
             - No direct conversation - complete task first
             - All changes must be made through tool execution
+            - You must use the SAYTOOL to provide the result to the user
         """.trimIndent(),
         llmModel = model,
         toolRegistry = toolRegistry,
