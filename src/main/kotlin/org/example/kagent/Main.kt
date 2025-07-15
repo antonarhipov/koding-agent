@@ -27,8 +27,8 @@ fun main(args: Array<String>) = runBlocking {
 
         // Example usage scenarios
         val examples = listOf(
-            "Create a simple calculator class with add, subtract, multiply, and divide operations, including comprehensive tests",
-            "Build a data class for a Person with name, age, and email, with validation and tests",
+            "Implement and test fizzbuzz program in Kotlin",
+            "Build a data class for a Person wi th name, age, and email, with validation and tests",
             "Create a utility class for string operations like reverse, palindrome check, and word count with tests"
         )
 

@@ -20,7 +20,11 @@ import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.dsl.builder.forwardTo
 import ai.koog.agents.core.dsl.builder.strategy
-import ai.koog.agents.core.dsl.extension.*
+import ai.koog.agents.core.dsl.extension.nodeExecuteTool
+import ai.koog.agents.core.dsl.extension.nodeLLMRequest
+import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResult
+import ai.koog.agents.core.dsl.extension.onAssistantMessage
+import ai.koog.agents.core.dsl.extension.onToolCall
 import ai.koog.agents.features.common.message.FeatureMessage
 import ai.koog.agents.features.common.message.FeatureMessageProcessor
 import ai.koog.agents.features.eventHandler.feature.handleEvents
@@ -32,7 +36,6 @@ import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.SingleLLMPromptExecutor
 import ai.koog.prompt.executor.llms.all.simpleAnthropicExecutor
 import ai.koog.prompt.executor.llms.all.simpleGoogleAIExecutor
-import ai.koog.prompt.executor.llms.all.simpleOllamaAIExecutor
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.prompt.executor.ollama.client.OllamaClient
 import ai.koog.prompt.executor.ollama.client.toLLModel
@@ -40,12 +43,14 @@ import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
 import kotlinx.coroutines.runBlocking
+import org.example.demo.createCodingAgentStrategy
 import org.example.kagent.mcp.McpIntegration
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
 fun createCodingAgent(selector: String): AIAgent {
     val (executor, model) = executorAndModel(selector)
+    println("Model: $model")
 
     // Create an agent strategy
     val strategy = createCodingAgentStrategy()
@@ -80,6 +85,14 @@ fun createCodingAgent(selector: String): AIAgent {
                 - Create meaningful test cases
                 - Follow Kotlin naming conventions
                 - Add appropriate documentation
+                
+                ## Instructions:
+
+                1. ALWAYS use available tools to complete tasks (especially tools provided by JetBrains MCP server) 
+                2. DO NOT provide direct responses - use tools instead
+                3. Chain multiple tool calls when needed
+                4. Handle tool results appropriately
+                5. Report errors if tools fail
                 
                 ***IMPORTANT*** YOU MUST USE TOOLS TO IMPLEMENT THE TASK!!!
                 ***IMPORTANT*** DON'T CHAT WITH ME BEFORE YOU FINISH
@@ -117,8 +130,7 @@ fun createCodingAgent(selector: String): AIAgent {
             onToolCallResult { tool, args, result ->
                 println("✅ Tool completed: ${tool.name}($args): $result")
             }
-            onAgentRunError { strategyName, uuid, exception
-                ->
+            onAgentRunError { strategyName, uuid, exception ->
                 println("🚨 Error occurred for strategy: $strategyName [$uuid]: $exception")
             }
         }
@@ -130,7 +142,7 @@ fun createCodingAgent(selector: String): AIAgent {
                 }
 
                 override suspend fun close() {
-                    TODO("Not yet implemented")
+                    // No cleanup needed
                 }
             })
         }
@@ -142,23 +154,25 @@ private fun executorAndModel(selector: String): Pair<SingleLLMPromptExecutor, LL
         System.getenv("OPENAI_API_KEY") ?: throw IllegalStateException("OPENAI_API_KEY not set")
     ) to OpenAIModels.Chat.GPT4o
 
-    "mistral" -> {
-        val client = OllamaClient()
-        val model = runBlocking { client.getModelOrNull("mistral")!!.toLLModel() }
-        SingleLLMPromptExecutor(client) to model
-    }
-
-    "llama" -> {
-        val client = OllamaClient()
-        val model = runBlocking { client.getModelOrNull("llama4")!!.toLLModel() }
-        SingleLLMPromptExecutor(client) to model
-    }
-
-    "qwen" -> {
+    "qwen3" -> {
         val client = OllamaClient()
         val model = LLModel(
             provider = LLMProvider.Ollama,
             id = "qwen3:latest",
+            capabilities = listOf(
+                LLMCapability.Temperature,
+                LLMCapability.Schema.JSON.Simple,
+                LLMCapability.Tools
+            )
+        )
+        SingleLLMPromptExecutor(client) to model
+    }
+
+    "magistral" -> {
+        val client = OllamaClient()
+        val model = LLModel(
+            provider = LLMProvider.Ollama,
+            id = "magistral:latest",
             capabilities = listOf(
                 LLMCapability.Temperature,
                 LLMCapability.Schema.JSON.Simple,
@@ -184,7 +198,20 @@ private fun executorAndModel(selector: String): Pair<SingleLLMPromptExecutor, LL
         System.getenv("GOOGLE_API_KEY") ?: throw IllegalStateException("GOOGLE_API_KEY not set")
     ) to GoogleModels.Gemini2_5ProPreview0506
 
-    else -> throw IllegalArgumentException("Invalid argument: ${selector}")
+    else -> {
+        try {
+            autoselect(selector)
+        } catch (e: Exception) {
+            println("Could not find Ollama model for $selector")
+            throw IllegalArgumentException("Invalid argument: ${selector}")
+        }
+    }
+}
+
+fun autoselect(selector: String) = run {
+    val client = OllamaClient()
+    val model = runBlocking { client.getModelOrNull(selector, pullIfMissing = true)!!.toLLModel() }
+    SingleLLMPromptExecutor(client) to model
 }
 
 fun createCodingAgentStrategy() = strategy("Coding Assistant") {
