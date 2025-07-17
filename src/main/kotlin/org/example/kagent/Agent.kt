@@ -25,6 +25,7 @@ import ai.koog.agents.core.dsl.extension.nodeLLMRequest
 import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResult
 import ai.koog.agents.core.dsl.extension.onAssistantMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
+import ai.koog.agents.core.feature.handler.AgentStartContext
 import ai.koog.agents.features.common.message.FeatureMessage
 import ai.koog.agents.features.common.message.FeatureMessageProcessor
 import ai.koog.agents.features.eventHandler.feature.handleEvents
@@ -42,13 +43,14 @@ import ai.koog.prompt.executor.ollama.client.toLLModel
 import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
+import com.sun.tools.javac.tree.TreeInfo.args
 import kotlinx.coroutines.runBlocking
 import org.example.demo.createCodingAgentStrategy
 import org.example.kagent.mcp.McpIntegration
 import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
-fun createCodingAgent(selector: String): AIAgent {
+fun createCodingAgent(selector: String): AIAgent<String, String> {
     val (executor, model) = executorAndModel(selector)
     println("Model: $model")
 
@@ -117,21 +119,22 @@ fun createCodingAgent(selector: String): AIAgent {
         toolRegistry = toolRegistry,
     ) {
         handleEvents {
-            onBeforeAgentStarted { strategy, _ ->
-                println("🚀 Starting coding session with strategy: ${strategy.name}")
+            onBeforeAgentStarted { strategy: AgentStartContext<*> ->
+                println("🚀 Starting coding session with strategy: ${strategy}")
             }
-            onAgentFinished { strategyName, result ->
-                println("✅ Coding session completed: $strategyName")
-                println("📋 Final result: $result")
+            onAgentFinished { strategy ->
+                println("✅ Coding session completed: $strategy")
+                println("📋 Final result: ${strategy.result}")
             }
-            onToolCall { tool, args ->
-                println("🔧 Executing tool: ${tool.name}($args)")
+            onToolCall { tool ->
+                println("🔧 Executing tool: ${tool.tool.name}")
+//                println(tool.toolArgs)
             }
-            onToolCallResult { tool, args, result ->
-                println("✅ Tool completed: ${tool.name}($args): $result")
+            onToolCallResult { tool ->
+                println("✅ Tool completed: ${tool.tool.name} -> ${tool.result?.toStringDefault()}")
             }
-            onAgentRunError { strategyName, uuid, exception ->
-                println("🚨 Error occurred for strategy: $strategyName [$uuid]: $exception")
+            onAgentRunError { error ->
+                println("🚨 Error occurred for strategy: ${error.throwable}")
             }
         }
 
@@ -196,7 +199,7 @@ private fun executorAndModel(selector: String): Pair<SingleLLMPromptExecutor, LL
 
     "gemini25pro" -> simpleGoogleAIExecutor(
         System.getenv("GOOGLE_API_KEY") ?: throw IllegalStateException("GOOGLE_API_KEY not set")
-    ) to GoogleModels.Gemini2_5ProPreview0506
+    ) to GoogleModels.Gemini2_5Pro
 
     else -> {
         try {

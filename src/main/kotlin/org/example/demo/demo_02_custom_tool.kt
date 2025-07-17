@@ -17,32 +17,34 @@ import ai.koog.prompt.executor.ollama.client.toLLModel
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import ai.koog.agents.core.tools.reflect.tool
+import com.sun.tools.javac.tree.TreeInfo.args
 
-fun main(args: Array<String>) = runBlocking {
-    //select executor based on command line parameter
-    val (executor, model) = when (args.firstOrNull() ?: "devstral") {
-        "openai" -> {
-            val openAIApiToken = System.getenv("OPENAI_API_KEY") ?: error("OPENAI_API_KEY environment variable not set")
-            simpleOpenAIExecutor(openAIApiToken) to OpenAIModels.Chat.GPT4o
+fun main(args: Array<String>) {
+    runBlocking {
+        //select executor based on command line parameter
+        val (executor, model) = when (args.firstOrNull() ?: "devstral") {
+            "openai" -> {
+                val openAIApiToken = System.getenv("OPENAI_API_KEY") ?: error("OPENAI_API_KEY environment variable not set")
+                simpleOpenAIExecutor(openAIApiToken) to OpenAIModels.Chat.GPT4o
+            }
+
+            "devstral" -> {
+                val client = OllamaClient()
+                val model = runBlocking { client.getModelOrNull("devstral")!!.toLLModel() }
+                SingleLLMPromptExecutor(client) to model
+            }
+
+            else -> throw IllegalArgumentException("Invalid argument: ${args.firstOrNull()}")
         }
 
-        "devstral" -> {
-            val client = OllamaClient()
-            val model = runBlocking { client.getModelOrNull("devstral")!!.toLLModel() }
-            SingleLLMPromptExecutor(client) to model
+        val toolRegistry = ToolRegistry {
+            tool(SayToUser)
+            tool(::temperatureTool)
         }
 
-        else -> throw IllegalArgumentException("Invalid argument: ${args.firstOrNull()}")
-    }
-
-    val toolRegistry = ToolRegistry {
-        tool(SayToUser)
-        tool(::temperatureTool)
-    }
-
-    val agent = AIAgent(
-        executor = executor,
-        systemPrompt = """
+        val agent = AIAgent(
+            executor = executor,
+            systemPrompt = """
             You are a helpful assistant that can answer general questions.            
             Answer any user query and provide a detailed response.
             Once you have the answer, tell it to the user.
@@ -51,18 +53,19 @@ fun main(args: Array<String>) = runBlocking {
             ***IMPORTANT*** DON'T CHAT WITH ME BEFORE YOU FINISH
             ***IMPORTANT*** USE THE SAYTOOL TO PROVIDE THE ANSWER TO THE USER
         """.trimIndent(),
-        llmModel = model,
-        toolRegistry = toolRegistry,
-    ) {
-        install(Tracing) {
-            addMessageProcessor(object : FeatureMessageProcessor() {
-                override suspend fun processMessage(message: FeatureMessage) = println(message)
-                override suspend fun close() = TODO("Not yet implemented")
-            })
+            llmModel = model,
+            toolRegistry = toolRegistry,
+        ) {
+            install(Tracing) {
+                addMessageProcessor(object : FeatureMessageProcessor() {
+                    override suspend fun processMessage(message: FeatureMessage) = println(message)
+                    override suspend fun close() = TODO("Not yet implemented")
+                })
+            }
         }
-    }
 
-    agent.run("What is the current temperature?")
+        agent.run("What is the current temperature?")
+    }
 }
 
 @Serializable

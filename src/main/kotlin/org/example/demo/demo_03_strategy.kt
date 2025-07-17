@@ -29,31 +29,32 @@ import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
 import org.example.kagent.createCodingAgentStrategy
 
-fun main(args: Array<String>) = runBlocking {
-    //select executor based on command line parameter
-    val (executor, model) = when (args.firstOrNull() ?: "devstral") {
-        "openai" -> {
-            val openAIApiToken = System.getenv("OPENAI_API_KEY") ?: error("OPENAI_API_KEY environment variable not set")
-            simpleOpenAIExecutor(openAIApiToken) to OpenAIModels.Chat.GPT4o
+fun main(args: Array<String>) {
+    runBlocking {
+        //select executor based on command line parameter
+        val (executor, model) = when (args.firstOrNull() ?: "devstral") {
+            "openai" -> {
+                val openAIApiToken = System.getenv("OPENAI_API_KEY") ?: error("OPENAI_API_KEY environment variable not set")
+                simpleOpenAIExecutor(openAIApiToken) to OpenAIModels.Chat.GPT4o
+            }
+
+            "devstral" -> {
+                val client = OllamaClient()
+                val model = runBlocking { client.getModelOrNull("devstral")!!.toLLModel() }
+                SingleLLMPromptExecutor(client) to model
+            }
+
+            else -> throw IllegalArgumentException("Invalid argument: ${args.firstOrNull()}")
         }
 
-        "devstral" -> {
-            val client = OllamaClient()
-            val model = runBlocking { client.getModelOrNull("devstral")!!.toLLModel() }
-            SingleLLMPromptExecutor(client) to model
+        val toolRegistry = ToolRegistry {
+            tool(SayToUser)
+            tool(::mathTool)
         }
 
-        else -> throw IllegalArgumentException("Invalid argument: ${args.firstOrNull()}")
-    }
-
-    val toolRegistry = ToolRegistry {
-        tool(SayToUser)
-        tool(::mathTool)
-    }
-
-    val agent = AIAgent(
-        executor = executor,
-        systemPrompt = """
+        val agent = AIAgent(
+            executor = executor,
+            systemPrompt = """
             You are an AI assistant helping users to solve tasks based on available tools.
             For any task:
             1. Analyze the request and determine required tools.
@@ -67,20 +68,21 @@ fun main(args: Array<String>) = runBlocking {
             - All changes must be made through tool execution
             - You must use the SAYTOOL to provide the result to the user
         """.trimIndent(),
-        llmModel = model,
-        toolRegistry = toolRegistry,
-        strategy = createCodingAgentStrategy(),
-    ) {
-        install(Tracing) {
-            addMessageProcessor(object : FeatureMessageProcessor() {
-                override suspend fun processMessage(message: FeatureMessage) = println(message)
-                override suspend fun close() = TODO("Not yet implemented")
-            })
+            llmModel = model,
+            toolRegistry = toolRegistry,
+            strategy = createCodingAgentStrategy(),
+        ) {
+            install(Tracing) {
+                addMessageProcessor(object : FeatureMessageProcessor() {
+                    override suspend fun processMessage(message: FeatureMessage) = println(message)
+                    override suspend fun close() = TODO("Not yet implemented")
+                })
+            }
         }
-    }
 
-    val mathProblemToSolve = "I had 5 apples. I ate 3 apples. My friend gave me 2 more apples. How many apples do I have left?"
-    agent.run(mathProblemToSolve)
+        val mathProblemToSolve = "I had 5 apples. I ate 3 apples. My friend gave me 2 more apples. How many apples do I have left?"
+        agent.run(mathProblemToSolve)
+    }
 }
 
 
