@@ -155,7 +155,7 @@ fun createCodingAgent(selector: String): AIAgent<String, String> {
 private fun executorAndModel(selector: String): Pair<SingleLLMPromptExecutor, LLModel> = when (selector) {
     "openai" -> simpleOpenAIExecutor(
         System.getenv("OPENAI_API_KEY") ?: throw IllegalStateException("OPENAI_API_KEY not set")
-    ) to OpenAIModels.Chat.GPT4o
+    ) to OpenAIModels.Reasoning.GPT4oMini
 
     "qwen3" -> {
         val client = OllamaClient()

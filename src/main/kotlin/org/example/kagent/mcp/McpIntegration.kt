@@ -25,17 +25,9 @@ object McpIntegration {
         return try {
             println("🔌 Attempting to connect to JetBrains MCP server...")
 
-            println("Starting JetBrains MCP server...")
-            // Start the JetBrains MCP proxy process
-            val process = ProcessBuilder(
-                "npx", "-y", "@jetbrains/mcp-proxy"
-            ).start()
-            Thread.sleep(5000)
-            println("✅ JetBrains MCP server started")
-
             println("Connecting to MCP server...")
             val toolRegistry = McpToolRegistryProvider.fromTransport(
-                transport = McpToolRegistryProvider.defaultStdioTransport(process)
+                transport = McpToolRegistryProvider.defaultSseTransport("http://localhost:64342")
             )
 
             println("✅ Successfully connected to JetBrains MCP server")
@@ -62,3 +54,4 @@ object McpIntegration {
         }
     }
 }
+
