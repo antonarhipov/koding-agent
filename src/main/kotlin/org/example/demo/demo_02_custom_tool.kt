@@ -22,20 +22,9 @@ import com.sun.tools.javac.tree.TreeInfo.args
 fun main(args: Array<String>) {
     runBlocking {
         //select executor based on command line parameter
-        val (executor, model) = when (args.firstOrNull() ?: "devstral") {
-            "openai" -> {
-                val openAIApiToken = System.getenv("OPENAI_API_KEY") ?: error("OPENAI_API_KEY environment variable not set")
-                simpleOpenAIExecutor(openAIApiToken) to OpenAIModels.Chat.GPT4o
-            }
-
-            "devstral" -> {
-                val client = OllamaClient()
-                val model = runBlocking { client.getModelOrNull("devstral")!!.toLLModel() }
-                SingleLLMPromptExecutor(client) to model
-            }
-
-            else -> throw IllegalArgumentException("Invalid argument: ${args.firstOrNull()}")
-        }
+        val (executor, model) = autoselect("gpt-oss:20b")
+        // try with other LLM:
+//        val (executor, model) = autoselect("mistral")
 
         val toolRegistry = ToolRegistry {
             tool(SayToUser)
@@ -58,13 +47,13 @@ fun main(args: Array<String>) {
         ) {
             install(Tracing) {
                 addMessageProcessor(object : FeatureMessageProcessor() {
-                    override suspend fun processMessage(message: FeatureMessage) = println(message)
+                    override suspend fun processMessage(message: FeatureMessage) = println("$message\n")
                     override suspend fun close() = TODO("Not yet implemented")
                 })
             }
         }
 
-        agent.run("What is the current temperature?")
+        agent.run("What is the current temperature? What should I wear")
     }
 }
 
@@ -76,7 +65,6 @@ data class TemperatureResult(val value: Int) : ToolResult {
 @Tool
 @LLMDescription("provide current temperature")
 suspend fun temperatureTool(): TemperatureResult {
-    println(">>>>>>>>>>>> TRACE: temperatureTool")
     return TemperatureResult(100000)
 }
 
