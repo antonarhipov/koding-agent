@@ -72,7 +72,7 @@ fun main(args: Array<String>) {
                     }
                 }
 
-                agent.run("How to use extension functions in Kotlin.")
+                agent.run("How to use Server-Sent Events (SSE) feature in Ktor?")
             } catch (e: Exception) {
                 println("Error connecting to MCP server: ${e.message}")
                 e.printStackTrace()
