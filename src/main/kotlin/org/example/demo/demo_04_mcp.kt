@@ -34,16 +34,14 @@ fun main(args: Array<String>) {
     try {
         runBlocking {
             try {
+
+                val toolRegistry = ToolRegistry { tool(SayToUser) }
+
                 // Create the ToolRegistry with tools from the MCP server
                 println("Connecting to MCP server...")
-                val mcpTools = McpToolRegistryProvider.fromTransport(
+                val mcpRegistry = McpToolRegistryProvider.fromTransport(
                     transport = McpToolRegistryProvider.defaultStdioTransport(process)
-                ).tools
-
-                val toolRegistry = ToolRegistry {
-                    tool(SayToUser)
-                    tools(mcpTools)
-                }
+                )
 
                 println("Successfully connected to MCP server")
 
@@ -63,13 +61,12 @@ fun main(args: Array<String>) {
                     """.trimIndent(),
                     executor = executor,
                     llmModel = model,
-                    toolRegistry = toolRegistry,
-                    strategy = assistantWorkflow()
+                    toolRegistry = toolRegistry + mcpRegistry
                 )
                 {
                     install(Tracing) {
                         addMessageProcessor(object : FeatureMessageProcessor() {
-                            override suspend fun processMessage(message: FeatureMessage) = println("${message.messageType}\n")
+                            override suspend fun processMessage(message: FeatureMessage) = println("$message")
                             override suspend fun close() = TODO("Not yet implemented")
                         })
                     }
@@ -85,29 +82,4 @@ fun main(args: Array<String>) {
         println("Closing connection to MCP server")
         process.destroy()
     }
-}
-
-
-private fun assistantWorkflow() = strategy("Assistant Workflow") {
-    // Define nodes for the coding workflow
-    val nodeAnalyzeRequest by nodeLLMRequest()
-    val nodeExecuteTool by nodeExecuteTool()
-    val nodeSendToolResult by nodeLLMSendToolResult()
-
-    // Define the workflow edges
-    // Start -> Analyze user request
-    edge(nodeStart forwardTo nodeAnalyzeRequest) // Analyze request -> Finish (if no tools needed)
-    edge(nodeAnalyzeRequest forwardTo nodeFinish onAssistantMessage { true })
-
-    // Analyze request -> Execute tool (if tool call is made)
-    edge(nodeAnalyzeRequest forwardTo nodeExecuteTool onToolCall { true })
-
-    // Execute tool -> Send a tool result back to LLM
-    edge(nodeExecuteTool forwardTo nodeSendToolResult)
-
-    // Send tool result -> Finish (if final response)
-    edge(nodeSendToolResult forwardTo nodeFinish onAssistantMessage { true })
-
-    // Send tool result -> Execute another tool (for chained operations)
-    edge(nodeSendToolResult forwardTo nodeExecuteTool onToolCall { true })
 }
