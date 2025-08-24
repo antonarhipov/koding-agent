@@ -45,7 +45,6 @@ import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
 import com.sun.tools.javac.tree.TreeInfo.args
 import kotlinx.coroutines.runBlocking
-import org.example.demo.createCodingAgentStrategy
 import org.example.kagent.mcp.McpIntegration
 import kotlin.uuid.ExperimentalUuidApi
 
@@ -211,7 +210,7 @@ private fun executorAndModel(selector: String): Pair<SingleLLMPromptExecutor, LL
     }
 }
 
-fun autoselect(selector: String) = run {
+private fun autoselect(selector: String) = run {
     val client = OllamaClient()
     val model = runBlocking { client.getModelOrNull(selector, pullIfMissing = true)!!.toLLModel() }
     SingleLLMPromptExecutor(client) to model
