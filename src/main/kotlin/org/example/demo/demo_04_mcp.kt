@@ -1,54 +1,32 @@
 package org.example.demo
 
 import ai.koog.agents.core.agent.AIAgent
-import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.dsl.builder.forwardTo
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.agents.core.dsl.extension.nodeExecuteTool
 import ai.koog.agents.core.dsl.extension.nodeLLMRequest
+import ai.koog.agents.core.dsl.extension.nodeLLMSendMessageForceOneTool
 import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResult
 import ai.koog.agents.core.dsl.extension.onAssistantMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
+import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.agents.ext.tool.SayToUser
+import ai.koog.agents.features.common.message.FeatureMessage
+import ai.koog.agents.features.common.message.FeatureMessageProcessor
+import ai.koog.agents.features.eventHandler.feature.handleEvents
+import ai.koog.agents.features.tracing.feature.Tracing
 import ai.koog.agents.mcp.McpToolRegistryProvider
-import ai.koog.prompt.dsl.prompt
-import ai.koog.prompt.executor.clients.openai.OpenAIModels
-import ai.koog.prompt.executor.llms.all.simpleOllamaAIExecutor
-import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
-import ai.koog.prompt.llm.LLMCapability
-import ai.koog.prompt.llm.LLMProvider
-import ai.koog.prompt.llm.LLModel
 import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
     // Get the API key from environment variables
-    val openAIApiToken = System.getenv("OPENAI_API_KEY") ?: error("OPENAI_API_KEY environment variable not set")
+//    val openAIApiToken = System.getenv("OPENAI_API_KEY") ?: error("OPENAI_API_KEY environment variable not set")
+
+    val (executor, model) = autoselect("gpt-oss:20b")
 
     val process = ProcessBuilder(
-        "npx", "-y", "@jetbrains/mcp-proxy",
+        "npx", "-y", "@upstash/context7-mcp@latest",
     ).start()
-
-    //select executor based on command line parameter
-    val executor = when (args.firstOrNull()) {
-        "openai" -> simpleOpenAIExecutor(openAIApiToken)
-        "mistral" -> simpleOllamaAIExecutor()
-        else -> throw IllegalArgumentException("Invalid argument: ${args.firstOrNull()}")
-    }
-
-    //select model based on command line parameter
-    val model = when (args.firstOrNull()) {
-        "openai" -> OpenAIModels.Chat.GPT4o
-        "mistral" -> LLModel(
-            provider = LLMProvider.Ollama,
-            id = "mistral:latest",
-            capabilities = listOf(
-                LLMCapability.Temperature,
-                LLMCapability.Schema.JSON.Simple,
-                LLMCapability.Tools
-            )
-        )
-
-        else -> throw IllegalArgumentException("Invalid argument: ${args.firstOrNull()}")
-    }
 
     // Wait for the server to start
     Thread.sleep(3500)
@@ -58,24 +36,46 @@ fun main(args: Array<String>) {
             try {
                 // Create the ToolRegistry with tools from the MCP server
                 println("Connecting to MCP server...")
-                val toolRegistry = McpToolRegistryProvider.fromTransport(
+                val mcpTools = McpToolRegistryProvider.fromTransport(
                     transport = McpToolRegistryProvider.defaultStdioTransport(process)
-                )
+                ).tools
+
+                val toolRegistry = ToolRegistry {
+                    tool(SayToUser)
+                    tools(mcpTools)
+                }
+
                 println("Successfully connected to MCP server")
 
                 // Create the runner
                 val agent = AIAgent(
+                    systemPrompt = """
+                        You are a helpful assistant that can answer user questions with documentation help.            
+                        Answer any user query and provide a detailed response.
+                        Before answering the question, check the documentation about the subject. 
+                        Once you have the answer, summarize all the information, and tell it to the user.
+                        
+                        MANDATORY INSTRUCTIONS:
+                        - Only use provided tools
+                        - No direct conversation - complete task first
+                        - All changes must be made through tool execution
+                        - You must use the SAYTOOL to provide the result to the user
+                    """.trimIndent(),
                     executor = executor,
-                    strategy = codingAgentStrategy(),
                     llmModel = model,
                     toolRegistry = toolRegistry,
+                    strategy = assistantWorkflow()
                 )
+                {
+                    install(Tracing) {
+                        addMessageProcessor(object : FeatureMessageProcessor() {
+                            override suspend fun processMessage(message: FeatureMessage) = println("${message.messageType}\n")
+                            override suspend fun close() = TODO("Not yet implemented")
+                        })
+                    }
+                }
 
-                val request = "write a simple fizzbuzz program"
-                println("Sending request: $request")
-                agent.run(
-                    request + "You can only call tools. Use JetBrains IDE tools to complete the task"
-                )
+                agent.run("How to use extension functions in Kotlin.")
             } catch (e: Exception) {
                 println("Error connecting to MCP server: ${e.message}")
                 e.printStackTrace()
@@ -87,12 +87,12 @@ fun main(args: Array<String>) {
     }
 }
 
-fun codingAgentStrategy() = strategy("Coding Assistant") {
+
+private fun assistantWorkflow() = strategy("Assistant Workflow") {
     // Define nodes for the coding workflow
     val nodeAnalyzeRequest by nodeLLMRequest()
     val nodeExecuteTool by nodeExecuteTool()
     val nodeSendToolResult by nodeLLMSendToolResult()
-//    val compressNode by nodeLLMCompressHistory<ReceivedToolResult>()
 
     // Define the workflow edges
     // Start -> Analyze user request
