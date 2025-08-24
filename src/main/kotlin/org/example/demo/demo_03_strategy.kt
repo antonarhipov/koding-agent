@@ -15,7 +15,6 @@ import ai.koog.agents.features.common.message.FeatureMessageProcessor
 import ai.koog.agents.features.tracing.feature.Tracing
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
-import org.example.kagent.createCodingAgentStrategy
 
 fun main(args: Array<String>) {
     runBlocking {
