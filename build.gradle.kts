@@ -25,11 +25,12 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    maven(url = "https://packages.jetbrains.team/maven/p/grazi/grazie-platform-public")
 }
 
 dependencies {
     testImplementation(kotlin("test"))
-    implementation("ai.koog:koog-agents:0.3.0")
+    implementation("ai.koog:koog-agents:0.4.2")
     implementation("org.slf4j:slf4j-simple:2.0.9")
 }
 

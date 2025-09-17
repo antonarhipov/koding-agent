@@ -2,13 +2,15 @@ package org.example.demo
 
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.ext.tool.SayToUser
 import ai.koog.agents.features.eventHandler.feature.handleEvents
 import kotlinx.coroutines.runBlocking
 
 fun main() {
     runBlocking {
-        val (executor, model) = autoselect("gpt-oss:20b")
+//        val (executor, model) = autoselect("gpt-oss:20b")
+        val (executor, model) = autoselect("qwen3:8b")
 
         val agent = AIAgent(
             executor = executor,
@@ -24,7 +26,8 @@ fun main() {
                 )
             },
         )
-        agent.run("Tell me a friendly programmers' joke about Amsterdam?")
+        // Why do programmers always mix up Halloween and Christmas? Because Oct 31 == Dec 25!
+        agent.run("Tell me a friendly juke about software developers?")//.also { println(it) }
     }
 }
 

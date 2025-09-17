@@ -1,11 +1,14 @@
 package org.example.demo
 
 import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.core.feature.message.FeatureMessage
+import ai.koog.agents.core.feature.message.FeatureMessageProcessor
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.ext.tool.SayToUser
-import ai.koog.agents.features.common.message.FeatureMessage
-import ai.koog.agents.features.common.message.FeatureMessageProcessor
+//import ai.koog.agents.features.common.message.FeatureMessage
+//import ai.koog.agents.features.common.message.FeatureMessageProcessor
 import ai.koog.agents.features.tracing.feature.Tracing
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
@@ -29,15 +32,20 @@ fun main(args: Array<String>) {
             llmModel = model,
             toolRegistry = toolRegistry,
         ) {
+            //region tracing
             install(Tracing) {
                 addMessageProcessor(object : FeatureMessageProcessor() {
+                    override val isOpen: StateFlow<Boolean>
+                        get() = TODO("Not yet implemented")
+
                     override suspend fun processMessage(message: FeatureMessage) = println("$message\n")
                     override suspend fun close() = TODO("Not yet implemented")
                 })
             }
+            //endregion
         }
 
-        agent.run("Tell me a friendly programmers' joke about Amsterdam?")
+        agent.run("Tell me a friendly juke about software developers?")
     }
 }
 
