@@ -10,6 +10,7 @@ import ai.koog.agents.ext.tool.SayToUser
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import ai.koog.agents.core.tools.reflect.tool
+import ai.koog.agents.ext.agent.reActStrategy
 import ai.koog.agents.features.eventHandler.feature.handleEvents
 
 fun main(args: Array<String>) {
@@ -17,7 +18,7 @@ fun main(args: Array<String>) {
         //select executor based on command line parameter
         val (executor, model) = autoselect("gpt-oss:20b")
         // try with other LLM:
-//        val (executor, model) = autoselect("mistral:7b-instruct")
+//        val (executor, model) = autoselect("qwen3:14b")
 
         val toolRegistry = ToolRegistry {
             tool(SayToUser)
@@ -33,6 +34,7 @@ fun main(args: Array<String>) {
         """.trimIndent(),
             llmModel = model,
             toolRegistry = toolRegistry,
+//            strategy = reActStrategy()
         ) {
             handleEvents {
                 onToolCall { ctx: ToolCallContext ->
@@ -60,5 +62,9 @@ suspend fun temperatureTool(): TemperatureResult {
 // location right now.
 // Without a reliable temperature figure, I can’t give a precise recommendation for what to wear. However, here are
 // a few general guidelines you can adapt once you have the real weather info:
+
+//<think>
+//Okay, the user is asking about the current temperature and what to wear. Let me check the available tools. There's a temperatureTool that can get the current temperature in Celsius. I need to call that first. Once I have the temperature, I can decide on the appropriate clothing advice. Let me use the temperatureTool now.
+//</think>
 
 
