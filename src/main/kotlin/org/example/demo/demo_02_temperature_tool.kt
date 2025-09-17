@@ -19,6 +19,7 @@ fun main(args: Array<String>) {
         val (executor, model) = autoselect("gpt-oss:20b")
         // try with other LLM:
 //        val (executor, model) = autoselect("qwen3:14b")
+//        val (executor, model) = autoselect("mistral:7b-instruct")
 
         val toolRegistry = ToolRegistry {
             tool(SayToUser)
