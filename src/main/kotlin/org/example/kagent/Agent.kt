@@ -26,8 +26,8 @@ import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResult
 import ai.koog.agents.core.dsl.extension.onAssistantMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
 import ai.koog.agents.core.feature.handler.AgentStartContext
-import ai.koog.agents.features.common.message.FeatureMessage
-import ai.koog.agents.features.common.message.FeatureMessageProcessor
+import ai.koog.agents.core.feature.message.FeatureMessage
+import ai.koog.agents.core.feature.message.FeatureMessageProcessor
 import ai.koog.agents.features.eventHandler.feature.handleEvents
 import ai.koog.agents.features.tracing.feature.Tracing
 import ai.koog.prompt.dsl.prompt
@@ -44,6 +44,7 @@ import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
 import com.sun.tools.javac.tree.TreeInfo.args
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
 import org.example.kagent.mcp.McpIntegration
 import kotlin.uuid.ExperimentalUuidApi
@@ -103,7 +104,7 @@ fun createCodingAgent(selector: String): AIAgent<String, String> {
             )
         },
         model = model,
-        maxAgentIterations = 25
+        maxAgentIterations = 50
     )
 
     val toolRegistry = runBlocking {
@@ -139,6 +140,9 @@ fun createCodingAgent(selector: String): AIAgent<String, String> {
 
         install(Tracing) {
             addMessageProcessor(object : FeatureMessageProcessor() {
+                override val isOpen: StateFlow<Boolean>
+                    get() = TODO("Not yet implemented")
+
                 override suspend fun processMessage(message: FeatureMessage) {
                     println(">>>>> TRACING: $message")
                 }
@@ -154,35 +158,7 @@ fun createCodingAgent(selector: String): AIAgent<String, String> {
 private fun executorAndModel(selector: String): Pair<SingleLLMPromptExecutor, LLModel> = when (selector) {
     "openai" -> simpleOpenAIExecutor(
         System.getenv("OPENAI_API_KEY") ?: throw IllegalStateException("OPENAI_API_KEY not set")
-    ) to OpenAIModels.Reasoning.GPT4oMini
-
-    "qwen3" -> {
-        val client = OllamaClient()
-        val model = LLModel(
-            provider = LLMProvider.Ollama,
-            id = "qwen3:latest",
-            capabilities = listOf(
-                LLMCapability.Temperature,
-                LLMCapability.Schema.JSON.Simple,
-                LLMCapability.Tools
-            )
-        )
-        SingleLLMPromptExecutor(client) to model
-    }
-
-    "magistral" -> {
-        val client = OllamaClient()
-        val model = LLModel(
-            provider = LLMProvider.Ollama,
-            id = "magistral:latest",
-            capabilities = listOf(
-                LLMCapability.Temperature,
-                LLMCapability.Schema.JSON.Simple,
-                LLMCapability.Tools
-            )
-        )
-        SingleLLMPromptExecutor(client) to model
-    }
+    ) to OpenAIModels.Reasoning.O4Mini
 
     "sonnet37" -> simpleAnthropicExecutor(
         System.getenv("ANTHROPIC_API_KEY") ?: throw IllegalStateException("ANTHROPIC_API_KEY not set")
