@@ -5,7 +5,6 @@ import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.dsl.builder.forwardTo
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.agents.core.dsl.extension.*
-import ai.koog.agents.core.tools.ToolDescriptor
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.core.tools.reflect.tool
 import ai.koog.agents.ext.tool.SayToUser
@@ -27,18 +26,18 @@ fun main(args: Array<String>) {
             val nodePlanWork by node<String, String> { stageInput ->
                 llm.writeSession {
                     updatePrompt {
-                        user(stageInput)
-                        user(
-                            """
+                        system {
+                            +"""
                                 Create a minimal list of tasks as a plan, how to implement the request.
                                 Assume that this is a new project and all new code should be written in a new folder.
                                 The first step in the plan should always be creating the new directory for the project.
                                 Enumerate the tasks. Provide the plan in JSON format.
                             """.trimIndent()
-                        )
+                        }
+                        user(stageInput)
                     }
 
-                    val response: Message.Response = requestLLMWithoutTools()
+                    val response = requestLLMWithoutTools()
                     response.content
                 }
             }
