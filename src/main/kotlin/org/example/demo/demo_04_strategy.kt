@@ -11,7 +11,7 @@ import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
     runBlocking {
-        val (executor, model) = autoselect("gpt-oss:20b")
+        val (executor, model) = gptoss()
         val stringToIntStrategy = strategy<String, Int>("str2int") {
             val toInt by node<String, Int> { it.toInt() }
             val inc by node<Int, Int> { it + 1 }

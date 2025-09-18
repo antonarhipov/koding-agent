@@ -18,7 +18,7 @@ import org.example.kagent.tools.timestamp
 
 fun main(args: Array<String>) {
     runBlocking {
-        val (executor, model) = autoselect("gpt-oss:20b")
+        val (executor, model) = gptoss()
         val codingStrategy = strategy<String, String>("coding strategy") {
             val nodeAnalyzeRequest by nodeLLMRequest()
             val nodeExecuteTool by nodeExecuteTool()
@@ -43,8 +43,9 @@ fun main(args: Array<String>) {
                 }
             }
 
-            edge(nodeStart forwardTo nodePlanWork)
-            edge(nodePlanWork forwardTo nodeAnalyzeRequest)
+//            edge(nodeStart forwardTo nodePlanWork)
+//            edge(nodePlanWork forwardTo nodeAnalyzeRequest)
+            nodeStart then nodePlanWork then nodeAnalyzeRequest
 
             edge(nodeAnalyzeRequest forwardTo nodeFinish onAssistantMessage { true })
             edge(nodeAnalyzeRequest forwardTo nodeExecuteTool onToolCall { true })
