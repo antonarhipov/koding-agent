@@ -19,8 +19,12 @@ package org.example.kagent.tools
 import ai.koog.agents.core.tools.ToolResult
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
+import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import java.io.File
+import kotlin.text.format
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 enum class FileOperationType { CREATE, READ, WRITE, DELETE }
 
@@ -80,4 +84,14 @@ fun fileOperations(
     } catch (e: Exception) {
         FileOperationResult(false, "Error: ${e.message}")
     }
+}
+
+
+@OptIn(ExperimentalTime::class)
+@Tool
+@LLMDescription("Return the current system time in timestamp format")
+fun timestamp(): String {
+    return java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
+        .withZone(java.time.ZoneId.systemDefault())
+        .format(java.time.Instant.now())
 }
