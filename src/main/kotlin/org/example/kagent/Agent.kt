@@ -25,7 +25,6 @@ import ai.koog.agents.core.dsl.extension.nodeLLMRequest
 import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResult
 import ai.koog.agents.core.dsl.extension.onAssistantMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
-import ai.koog.agents.core.feature.handler.AgentStartContext
 import ai.koog.agents.core.feature.message.FeatureMessage
 import ai.koog.agents.core.feature.message.FeatureMessageProcessor
 import ai.koog.agents.features.eventHandler.feature.handleEvents
@@ -118,25 +117,6 @@ fun createCodingAgent(selector: String): AIAgent<String, String> {
         agentConfig = agentConfig,
         toolRegistry = toolRegistry,
     ) {
-        handleEvents {
-            onBeforeAgentStarted { strategy: AgentStartContext<*> ->
-                println("🚀 Starting coding session with strategy: ${strategy}")
-            }
-            onAgentFinished { strategy ->
-                println("✅ Coding session completed: $strategy")
-                println("📋 Final result: ${strategy.result}")
-            }
-            onToolCall { tool ->
-                println("🔧 Executing tool: ${tool.tool.name}")
-//                println(tool.toolArgs)
-            }
-            onToolCallResult { tool ->
-                println("✅ Tool completed: ${tool.tool.name} -> ${tool.result?.toStringDefault()}")
-            }
-            onAgentRunError { error ->
-                println("🚨 Error occurred for strategy: ${error.throwable}")
-            }
-        }
 
         install(Tracing) {
             addMessageProcessor(object : FeatureMessageProcessor() {

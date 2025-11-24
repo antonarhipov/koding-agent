@@ -1,30 +1,34 @@
 package org.example.demo
 
 import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.core.agent.GraphAIAgent.FeatureContext
 import ai.koog.agents.core.dsl.builder.forwardTo
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.agents.core.dsl.extension.*
+import ai.koog.agents.core.feature.handler.tool.ToolCallStartingContext
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.core.tools.ToolResult
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.tool
 import ai.koog.agents.ext.tool.SayToUser
+import ai.koog.agents.features.eventHandler.feature.handleEvents
+import ai.koog.prompt.executor.llms.Executors.promptExecutor
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
-fun main(args: Array<String>) {
+fun main(args: Array<String>): Unit {
     runBlocking {
         //select executor based on command line parameter
-        val (executor, model) = autoselect("gpt-oss:20b")
+        val (executor, model) = gptoss()
 
         val toolRegistry = ToolRegistry {
             tool(SayToUser)
             tool(::mathTool)
         }
 
-        val agent = AIAgent(
-            executor = executor,
+        val agent: AIAgent<String, String> = AIAgent(
+            promptExecutor = executor,
             systemPrompt = """
             You are an AI assistant helping users to solve tasks based on available tools.
             For any task:
@@ -41,17 +45,17 @@ fun main(args: Array<String>) {
         """.trimIndent(),
             llmModel = model,
             toolRegistry = toolRegistry,
-        )
+        ) {
+            handleEvents {
+                onToolCallStarting { ctx: ToolCallStartingContext ->
+                    println("Calling the tool '${ctx.tool.name}'(${ctx.toolArgs})")
+                }
+            }
+        }
         val mathProblemToSolve =
             "I had 5 apples. I ate 3 apples. My friend gave me 2 more apples. How many apples do I have left?"
         agent.run(mathProblemToSolve)
     }
-}
-
-
-@Serializable
-data class MathResult(val total: Int) : ToolResult {
-    override fun toStringDefault(): String = "Total: $total"
 }
 
 @Tool
@@ -59,7 +63,5 @@ data class MathResult(val total: Int) : ToolResult {
 suspend fun mathTool(
     @LLMDescription("list of numbers")
     numbers: List<Int>,
-): MathResult {
-    println(">>>>>>>>>>>> TRACE: mathTool " + numbers.joinToString())
-    return MathResult(numbers.sumOf { it })
-}
+): Int = numbers.sumOf { it }
+

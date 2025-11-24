@@ -11,14 +11,14 @@ import org.example.kagent.tools.testRunner
 object McpIntegration {
     
     suspend fun createToolRegistryWithMcpFallback(): ToolRegistry {
-        return try {
+//        return try {
             // Try to initialize MCP in a blocking way for now
             // In a real implementation, this could be done asynchronously during agent startup
-            createMcpToolRegistryBlocking()
-        } catch (e: Exception) {
-            println("📦 MCP initialization failed, using custom tools: ${e.message}")
-            createFallbackToolRegistry()
-        }
+//            createMcpToolRegistryBlocking()
+//        } catch (e: Exception) {
+//            println("📦 MCP initialization failed, using custom tools: ${e.message}")
+           return createFallbackToolRegistry()
+//        }
     }
     
     private suspend fun createMcpToolRegistryBlocking(): ToolRegistry {

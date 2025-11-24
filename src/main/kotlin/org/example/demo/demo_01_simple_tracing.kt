@@ -12,25 +12,22 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) {
-    runBlocking {
-        //select executor based on command line parameter
-        val (executor, model) = autoselect("gpt-oss:20b")
 
-        val toolRegistry = ToolRegistry {
-            tools(
-                listOf(SayToUser)
-            )
-        }
+    runBlocking {
+        val (executor, model) = gptoss()
 
         val agent = AIAgent(
-            executor = executor,
+            promptExecutor = executor,
             systemPrompt = """
-            You are a helpful assistant that can answer general questions.            
-            Answer any user query and provide a detailed response.
-            Once you have the answer, tell it to the user.
-        """.trimIndent(),
+                You are a helpful assistant that can answer general questions.            
+                Answer any user query and provide a detailed response.
+                Once you have the answer, tell it to the user.
+            """.trimIndent(),
             llmModel = model,
-            toolRegistry = toolRegistry,
+            temperature = 1.0,
+            toolRegistry = ToolRegistry {
+                tool(SayToUser)
+            }
         ) {
             //region tracing
             install(Tracing) {
@@ -45,7 +42,8 @@ fun main(args: Array<String>) {
             //endregion
         }
 
-        agent.run("Tell me a friendly juke about software developers?")
+        // Why do programmers always mix up Halloween and Christmas? Because Oct 31 == Dec 25!
+        agent.run("Tell me a friendly juke about software developers?")//.also { println(it) }
     }
 }
 

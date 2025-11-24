@@ -9,6 +9,7 @@ import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.core.tools.reflect.tool
 import ai.koog.agents.ext.tool.SayToUser
 import ai.koog.agents.features.eventHandler.feature.handleEvents
+import ai.koog.prompt.dsl.PromptBuilder
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.message.Message
 import kotlinx.coroutines.runBlocking
@@ -25,7 +26,7 @@ fun main(args: Array<String>) {
 
             val nodePlanWork by node<String, String> { stageInput ->
                 llm.writeSession {
-                    updatePrompt {
+                    appendPrompt {
                         system {
                             +"""
                                 Create a minimal list of tasks as a plan, how to implement the request.
@@ -77,10 +78,10 @@ fun main(args: Array<String>) {
             }
         ) {
             handleEvents {
-                onToolCall { ctx ->
+                onToolCallStarting { ctx ->
                     println("Calling tool: ${ctx.tool.name}(${ctx.toolArgs})")
                 }
-                onAfterLLMCall { ctx ->
+                onLLMCallCompleted { ctx ->
                     println("LLM responded =========================  ")
                     ctx.responses.forEach(::println)
                     println("=======================================  ")
