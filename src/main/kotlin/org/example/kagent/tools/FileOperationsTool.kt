@@ -16,7 +16,6 @@
 
 package org.example.kagent.tools
 
-import ai.koog.agents.core.tools.ToolResult
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import kotlinx.datetime.Instant
@@ -33,9 +32,7 @@ data class FileOperationResult(
     val success: Boolean,
     val message: String,
     val content: String? = null
-) : ToolResult {
-    override fun toStringDefault(): String = message
-}
+)
 
 @Tool
 @LLMDescription("Perform file operations: create, read, write, delete files")

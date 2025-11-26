@@ -5,8 +5,6 @@ import ai.koog.agents.core.feature.message.FeatureMessage
 import ai.koog.agents.core.feature.message.FeatureMessageProcessor
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.ext.tool.SayToUser
-//import ai.koog.agents.features.common.message.FeatureMessage
-//import ai.koog.agents.features.common.message.FeatureMessageProcessor
 import ai.koog.agents.features.tracing.feature.Tracing
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking

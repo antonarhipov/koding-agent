@@ -9,7 +9,7 @@ import ai.koog.agents.ext.tool.SayToUser
 import ai.koog.prompt.dsl.prompt
 import kotlinx.coroutines.runBlocking
 
-fun main(args: Array<String>) {
+fun main() {
     runBlocking {
         val (executor, model) = gptoss()
 
