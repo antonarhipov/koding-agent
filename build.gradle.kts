@@ -30,7 +30,8 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
-    implementation("ai.koog:koog-agents:0.5.3")
+//    implementation("ai.koog:koog-agents:0.5.3")
+    implementation("ai.koog:koog-agents:0.5.4-develop-20251127-0203")
     implementation("org.slf4j:slf4j-simple:2.0.9")
 }
 

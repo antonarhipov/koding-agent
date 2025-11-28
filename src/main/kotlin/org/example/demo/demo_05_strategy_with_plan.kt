@@ -17,6 +17,8 @@ import ai.koog.agents.ext.tool.shell.JvmShellCommandExecutor
 import ai.koog.agents.ext.tool.shell.PrintShellCommandConfirmationHandler
 import ai.koog.agents.ext.tool.shell.ShellCommandConfirmation
 import ai.koog.agents.features.eventHandler.feature.handleEvents
+import ai.koog.agents.features.opentelemetry.feature.OpenTelemetry
+import ai.koog.agents.features.opentelemetry.integration.langfuse.addLangfuseExporter
 import ai.koog.prompt.dsl.PromptBuilder
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
@@ -27,10 +29,11 @@ import kotlinx.coroutines.runBlocking
 import org.example.kagent.tools.fileOperations
 
 import org.example.kagent.tools.timestamp
+import java.nio.file.Path
 
 fun main(args: Array<String>) {
     runBlocking {
-        val (executor, model) = gptoss()
+//        val (executor, model) = gptoss()
         val codingStrategy = strategy<String, String>("coding strategy") {
             val nodeAnalyzeRequest by nodeLLMRequest()
             val nodeExecuteTool by nodeExecuteTool()
@@ -48,7 +51,7 @@ fun main(args: Array<String>) {
                                 Enumerate the tasks. Provide the plan in JSON format.
                             """.trimIndent()
                         }
-//                        user(stageInput)
+                        user(stageInput)
                     }
 
                     val response = requestLLMWithoutTools()
@@ -86,14 +89,20 @@ fun main(args: Array<String>) {
             ),
             toolRegistry = ToolRegistry {
                 tool(SayToUser)
-                tool(ListDirectoryTool(JVMFileSystemProvider.ReadOnly))
-                tool(ReadFileTool(JVMFileSystemProvider.ReadOnly))
-                tool(EditFileTool(JVMFileSystemProvider.ReadWrite))
+//                tool(ListDirectoryTool(JVMFileSystemProvider.ReadOnly))
+//                tool(ReadFileTool(JVMFileSystemProvider.ReadOnly))
+//                tool(EditFileTool(JVMFileSystemProvider.ReadWrite))
+                tool(::fileOperations)
                 tool(::timestamp)
                 tool(createExecuteShellCommandToolFromEnv())
             }
         ) {
             handleEvents {
+//                install(OpenTelemetry) {
+//                    setVerbose(true)
+//                    addLangfuseExporter()
+//                }
+
                 onToolCallStarting { ctx ->
                     println("Calling tool: ${ctx.tool.name}(${ctx.toolArgs})")
                 }

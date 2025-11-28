@@ -1,6 +1,7 @@
 package org.example.demo
 
 import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.core.agent.context.RollbackStrategy
 import ai.koog.agents.core.agent.singleRunStrategy
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.agents.core.system.getEnvironmentVariableOrNull
@@ -13,6 +14,10 @@ import ai.koog.agents.ext.tool.shell.JvmShellCommandExecutor
 import ai.koog.agents.ext.tool.shell.PrintShellCommandConfirmationHandler
 import ai.koog.agents.ext.tool.shell.ShellCommandConfirmation
 import ai.koog.agents.features.eventHandler.feature.handleEvents
+import ai.koog.agents.snapshot.feature.Persistence
+import ai.koog.agents.snapshot.feature.RollbackToolRegistry
+import ai.koog.agents.snapshot.feature.registerRollback
+import ai.koog.agents.snapshot.providers.InMemoryPersistenceStorageProvider
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import ai.koog.rag.base.files.JVMFileSystemProvider
@@ -21,12 +26,12 @@ import kotlinx.coroutines.runBlocking
 fun main() = runBlocking {
 
     val (executor, model) = gptoss()
-
+    val storage = InMemoryPersistenceStorageProvider()
 
     val agent = AIAgent(
 //        promptExecutor = executor,
         promptExecutor = simpleOpenAIExecutor(getEnvironmentVariableOrNull("OPENAI_API_KEY") ?: throw RuntimeException("OPENAI_API_KEY environment variable is not set")),
-        llmModel = OpenAIModels.Chat.GPT5Codex,
+        llmModel = OpenAIModels.Chat.GPT5,
         toolRegistry = ToolRegistry {
             tool(ListDirectoryTool(JVMFileSystemProvider.ReadOnly))
             tool(ReadFileTool(JVMFileSystemProvider.ReadOnly))
@@ -39,6 +44,16 @@ fun main() = runBlocking {
         strategy = singleRunStrategy(),
         maxIterations = 100
     ) {
+
+        install(Persistence) {
+            this.rollbackStrategy = RollbackStrategy.MessageHistoryOnly  /// rename the API
+            this.enableAutomaticPersistence = true
+            this.storage = storage
+//            this.rollbackToolRegistry = RollbackToolRegistry {
+//                this.registerRollback()
+//            }
+        }
+
         handleEvents {
             onToolCallStarting { ctx ->
                 println(
