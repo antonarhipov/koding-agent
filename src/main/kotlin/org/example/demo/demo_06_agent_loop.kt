@@ -31,7 +31,10 @@ fun main(args: Array<String>) {
         val (executor, model) = gptoss()
 
         val codingStrategy = strategy<String, String>("coding strategy") {
-            val nodePlanWork by subgraphWithTask<String, String>(tools = emptyList()) { input ->
+            val nodePlanWork by subgraphWithTask<String, String>(
+                tools = emptyList(),
+                name = "plan work"
+            ) { input ->
                 """
                     Create a minimal list of tasks as a plan, how to implement the request.
                     Assume that this is a new project and all new code should be written in a new folder.
@@ -43,7 +46,8 @@ fun main(args: Array<String>) {
             }
 
             val nodeImplementTask by subgraphWithTask<String, String>(
-                ToolSelectionStrategy.ALL
+                ToolSelectionStrategy.ALL,
+                name = "implement task",
             ) { input ->
                 """
                     Implement the user request according to the supplied plan.
@@ -79,14 +83,12 @@ fun main(args: Array<String>) {
                 tool(createExecuteShellCommandToolFromEnv())
             }
         ) {
-
-
-// TODO: Checkpoint feature requires unique node names in the strategy metadata
-//            install(Persistence) {
-//                this.storage = inMemoryStorage
-//                this.rollbackStrategy = RollbackStrategy.MessageHistoryOnly
-//                this.enableAutomaticPersistence = true
-//            }
+            // Checkpoint feature requires unique node names in the strategy metadata
+            install(Persistence) {
+                this.storage = inMemoryStorage
+                this.rollbackStrategy = RollbackStrategy.MessageHistoryOnly
+                this.enableAutomaticPersistence = true
+            }
 
             handleEvents {
                 onToolCallStarting { ctx ->
