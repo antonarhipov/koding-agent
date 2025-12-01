@@ -62,14 +62,14 @@ fun main(args: Array<String>) {
             strategy = codingStrategy,
             agentConfig = AIAgentConfig(
                 prompt = prompt("system prompt") {
-//                    system {
-//                        """
-//                            You are a coding assistant helping the user to write programs according to their requests.
-//                            Implement the user request according to the supplied plan.
-//                            The code should be generated a new dedicated directory.
-//                            Once you have the answer, tell it to the user.
-//                        """.trimIndent()
-//                    }
+                    system {
+                        """
+                            You are a coding assistant helping the user to write programs according to their requests.
+                            Implement the user request according to the supplied plan.
+                            The code should be generated a new dedicated directory.
+                            Once you have the answer, tell it to the user.
+                        """.trimIndent()
+                    }
                 },
                 model = model,
                 maxAgentIterations = 100
