@@ -9,6 +9,7 @@ import ai.koog.agents.features.tracing.feature.Tracing
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
 
+
 fun main(args: Array<String>) {
 
     runBlocking {
@@ -30,10 +31,12 @@ fun main(args: Array<String>) {
             //region tracing
             install(Tracing) {
                 addMessageProcessor(object : FeatureMessageProcessor() {
+                    private val sep = "---------------------------"
+
                     override val isOpen: StateFlow<Boolean>
                         get() = TODO("Not yet implemented")
 
-                    override suspend fun processMessage(message: FeatureMessage) = println("$message\n")
+                    override suspend fun processMessage(message: FeatureMessage) = println("$message\n$sep")
                     override suspend fun close() = TODO("Not yet implemented")
                 })
             }
