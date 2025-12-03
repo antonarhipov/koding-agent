@@ -5,10 +5,10 @@ import ai.koog.prompt.executor.ollama.client.OllamaClient
 import ai.koog.prompt.executor.ollama.client.toLLModel
 import kotlinx.coroutines.runBlocking
 
-fun gptoss() = autoselect("gpt-oss:20b")
+suspend fun gptoss() = autoselect("gpt-oss:20b")
 
-fun autoselect(selector: String) = run {
+suspend fun autoselect(selector: String) = run {
     val client = OllamaClient()
-    val model = runBlocking { client.getModelOrNull(selector, pullIfMissing = true)!!.toLLModel() }
+    val model = client.getModelOrNull(selector, pullIfMissing = true)!!.toLLModel()
     SingleLLMPromptExecutor(client) to model
 }
