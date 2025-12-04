@@ -2,6 +2,7 @@ package org.example.demo
 
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.config.AIAgentConfig
+import ai.koog.agents.core.agent.entity.ToolSelectionStrategy
 import ai.koog.agents.core.dsl.builder.forwardTo
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.agents.core.dsl.extension.*
@@ -10,67 +11,69 @@ import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.core.tools.reflect.tool
 import ai.koog.agents.ext.agent.subgraphWithTask
 import ai.koog.agents.ext.tool.SayToUser
+import ai.koog.agents.ext.tool.file.EditFileTool
+import ai.koog.agents.ext.tool.file.ListDirectoryTool
+import ai.koog.agents.ext.tool.file.ReadFileTool
 import ai.koog.agents.features.eventHandler.feature.handleEvents
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
+import ai.koog.rag.base.files.JVMFileSystemProvider
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.Serializable
 import org.example.kagent.tools.fileOperations
 import org.example.kagent.tools.timestamp
 
+@Serializable
+data class PlanItem(val id: Int, val task: String)
+
+@Serializable
+data class Plan(
+    val id: Int,
+    val items: List<PlanItem>
+)
+
+
 fun main(args: Array<String>) {
     runBlocking {
-        val (executor, model) = gptoss()
-//        val (executor, model) =
-//            (simpleOpenAIExecutor(
-//                getEnvironmentVariableOrNull("OPENAI_API_KEY") ?: throw Exception("OPENAI_API_KEY is not set")
-//            ) to OpenAIModels.Chat.GPT5_1)
+//        val (executor, model) = gptoss()
+        val (executor, model) = openai()
 
         val codingStrategy = strategy<String, String>("coding strategy") {
-            val nodeAnalyzeRequest by nodeLLMRequest()
-            val nodeExecuteTool by nodeExecuteTool()
-            val nodeSendToolResult by nodeLLMSendToolResult()
-
-//            val nodePlanWork by node<String, String> { stageInput ->
-//                llm.writeSession {
-//                    appendPrompt {
-//                        system {
-//                            +"""
-//                                Create a minimal list of tasks as a plan, how to implement the request.
-//                                Assume that this is a new project and all new code should be written in a new folder.
-//                                Use the path of the current directory as the root for the new project.
-//                                The first step in the plan should always be creating the new directory for the project.
-//                                Enumerate the tasks. Provide the plan in JSON format.
-//                            """.trimIndent()
-//                        }
-//                        user(stageInput)
-//                    }
-//
-//                    val response = requestLLMWithoutTools()
-//                    response.content
-//                }
-//            }
-
-            val nodePlanWork by subgraphWithTask<String, String>(tools = emptyList()) { input ->
+            val nodePlanWork by subgraphWithTask<String, Plan>(
+                name = "plan work",
+                tools = emptyList()) { input ->
                 """
                     Create a minimal list of tasks as a plan, how to implement the request.
                     Assume that this is a new project and all new code should be written in a new folder.
                     The first step in the plan should always be creating the new directory for the project.
-                    Enumerate the tasks. Provide the plan in JSON format.
+                    Enumerate the tasks. 
+                    
+                    Provide the plan in JSON format as follows: a JSON collection of JSON elements with id:Int and task:String fields.
+                    
+                    User input: $input
+                """
+            }
+
+            val nodeAnalyzePlan by node<Plan, Plan> { plan ->
+                plan.items.forEach { println(it) }
+                plan
+            }
+
+            val nodeImplementTask by subgraphWithTask<Plan, String>(
+                ToolSelectionStrategy.ALL,
+                name = "implement task",
+            ) { input ->
+                """
+                    Implement the user request according to the supplied plan.
+                    The code should be generated in a new dedicated directory.
+                    Once you have the answer, tell it to the user.
 
                     User input: $input
                 """
             }
 
-//            edge(nodeStart forwardTo nodePlanWork)
-//            edge(nodePlanWork forwardTo nodeAnalyzeRequest)
-            nodeStart then nodePlanWork then nodeAnalyzeRequest
-
-            edge(nodeAnalyzeRequest forwardTo nodeFinish onAssistantMessage { true })
-            edge(nodeAnalyzeRequest forwardTo nodeExecuteTool onToolCall { true })
-            edge(nodeExecuteTool forwardTo nodeSendToolResult)
-            edge(nodeSendToolResult forwardTo nodeFinish onAssistantMessage { true })
-            edge(nodeSendToolResult forwardTo nodeExecuteTool onToolCall { true })
+            nodeStart then nodePlanWork then nodeAnalyzePlan then nodeImplementTask then nodeFinish
         }
 
         val agent = AIAgent(
@@ -92,11 +95,9 @@ fun main(args: Array<String>) {
             ),
             toolRegistry = ToolRegistry {
                 tool(SayToUser)
-//                tool(ListDirectoryTool(JVMFileSystemProvider.ReadOnly))
-//                tool(ReadFileTool(JVMFileSystemProvider.ReadOnly))
-//                tool(EditFileTool(JVMFileSystemProvider.ReadWrite))
-                tool(::fileOperations)
-                tool(::timestamp)
+                tool(ListDirectoryTool(JVMFileSystemProvider.ReadOnly))
+                tool(ReadFileTool(JVMFileSystemProvider.ReadOnly))
+                tool(EditFileTool(JVMFileSystemProvider.ReadWrite))
                 tool(createExecuteShellCommandToolFromEnv())
             }
         ) {
@@ -117,7 +118,16 @@ fun main(args: Array<String>) {
             }
         }
 
-        agent.run("Write and test fizzbuzz program in Kotlin").also { println(it) }
+
+        val (path, task) = ("/Users/anton/IdeaProjects/kagent/demo" to "Write and test a fizzbuzz program in Kotlin")
+        val input = "Project absolute path: $path\n\n## Task\n$task"
+        try {
+            val result = agent.run(input)
+            println(result)
+        } finally {
+            executor.close()
+        }
+
     }
 }
 
