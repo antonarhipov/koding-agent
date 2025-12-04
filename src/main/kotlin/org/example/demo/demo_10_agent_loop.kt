@@ -1,27 +1,18 @@
 package org.example.demo
 
 import ai.koog.agents.core.agent.AIAgent
-import ai.koog.agents.core.agent.AIAgentService
 import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.agent.context.RollbackStrategy
 import ai.koog.agents.core.agent.entity.ToolSelectionStrategy
-import ai.koog.agents.core.dsl.builder.forwardTo
 import ai.koog.agents.core.dsl.builder.strategy
-import ai.koog.agents.core.dsl.extension.*
-import ai.koog.agents.core.system.getEnvironmentVariableOrNull
 import ai.koog.agents.core.tools.ToolRegistry
-import ai.koog.agents.core.tools.reflect.tool
 import ai.koog.agents.ext.agent.subgraphWithTask
 import ai.koog.agents.ext.tool.SayToUser
 import ai.koog.agents.features.eventHandler.feature.handleEvents
 import ai.koog.agents.snapshot.feature.Persistence
 import ai.koog.agents.snapshot.providers.InMemoryPersistenceStorageProvider
 import ai.koog.prompt.dsl.prompt
-import ai.koog.prompt.executor.clients.openai.OpenAIModels
-import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
 import kotlinx.coroutines.runBlocking
-import org.example.kagent.tools.fileOperations
-import org.example.kagent.tools.timestamp
 
 fun main(args: Array<String>) {
 
