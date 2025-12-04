@@ -138,7 +138,7 @@ fun createCodingAgent(selector: String): AIAgent<String, String> {
 private fun executorAndModel(selector: String): Pair<SingleLLMPromptExecutor, LLModel> = when (selector) {
     "openai" -> simpleOpenAIExecutor(
         System.getenv("OPENAI_API_KEY") ?: throw IllegalStateException("OPENAI_API_KEY not set")
-    ) to OpenAIModels.Reasoning.O4Mini
+    ) to OpenAIModels.Chat.GPT5
 
     "sonnet37" -> simpleAnthropicExecutor(
         System.getenv("ANTHROPIC_API_KEY") ?: throw IllegalStateException("ANTHROPIC_API_KEY not set")
