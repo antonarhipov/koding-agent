@@ -19,7 +19,7 @@ import kotlinx.serialization.Serializable
 fun main(args: Array<String>): Unit {
     runBlocking {
         //select executor based on command line parameter
-        val (executor, model) = gptoss()
+        val (executor, model) = ministral3b()
 
         val toolRegistry = ToolRegistry {
             tool(SayToUser)
@@ -76,3 +76,13 @@ suspend fun mathTool(
 //[main] INFO ai.koog.agents.core.agent.GraphAIAgent - [agent id: c0f86e1c-eb92-4c07-8b4c-8805f4339206, run id: 0e3e4c5d-7c7c-4c83-8a4f-aaaa9f2526e9] Executing tools: [say_to_user]
 //Calling the tool 'say_to_user'(Args(message=You have 4 apples left.))
 //Agent says: You have 4 apples left.
+
+
+//> Task :org.example.demo.Demo_03_math_toolKt.main()
+//[main] INFO ai.koog.prompt.executor.ollama.client.OllamaClient - Loaded Ollama model card for mistral:latest
+//[main] INFO ai.koog.agents.features.eventHandler.feature.EventHandler - Start installing feature: EventHandler
+//[main] INFO ai.koog.agents.core.agent.entity.AIAgentSubgraph - Executing subgraph 'single_run_sequential' [single_run_sequential, single_run_sequential, 64455077-5f5c-4720-ad80-73bdb5d6a84b]
+//[main] INFO ai.koog.agents.core.agent.entity.AIAgentSubgraph - No enforced execution point, starting from __start__ [single_run_sequential, single_run_sequential, 64455077-5f5c-4720-ad80-73bdb5d6a84b]
+//[main] INFO ai.koog.agents.core.agent.GraphAIAgent - [agent id: d22948cb-c0cb-4113-b076-047e3238c546, run id: 64455077-5f5c-4720-ad80-73bdb5d6a84b] Executing tools: [say_to_user]
+//Calling the tool 'say_to_user'(Args(message=You started with 5 apples, ate 3 and were given 2 more. So you have 5 - 3 + 2 = 6 apples remaining.))
+//Agent says: You started with 5 apples, ate 3 and were given 2 more. So you have 5 - 3 + 2 = 6 apples remaining.

@@ -10,7 +10,8 @@ import kotlinx.coroutines.runBlocking
 fun main() {
     runBlocking {
 
-        // see gptoss()
+        // see
+        gptoss()
         val client = OllamaClient()
         val model = client.getModelOrNull("gpt-oss:20b", pullIfMissing = true)!!.toLLModel()
         val executor = SingleLLMPromptExecutor(client)

@@ -7,9 +7,7 @@ import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.ext.tool.SayToUser
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.Serializable
 import ai.koog.agents.core.tools.reflect.tool
-import ai.koog.agents.ext.agent.reActStrategy
 import ai.koog.agents.features.eventHandler.feature.handleEvents
 
 fun main(args: Array<String>) {
@@ -98,3 +96,9 @@ suspend fun temperatureTool() = 30L
 //
 //So according to the current temperature: [The temperature tool returns a response with the current temperature in Celsius] you should consider wearing a lightweight jacket or sweater, depending on how cold you feel.
 
+//[main] INFO ai.koog.prompt.executor.ollama.client.OllamaClient - Loaded Ollama model card for mistral:latest
+//[main] INFO ai.koog.agents.features.eventHandler.feature.EventHandler - Start installing feature: EventHandler
+//[main] INFO ai.koog.agents.core.agent.entity.AIAgentSubgraph - Executing subgraph 'single_run_sequential' [single_run_sequential, single_run_sequential, 59764cbd-9626-4e7e-bf01-b11e2d6dfb9b]
+//[main] INFO ai.koog.agents.core.agent.entity.AIAgentSubgraph - No enforced execution point, starting from __start__ [single_run_sequential, single_run_sequential, 59764cbd-9626-4e7e-bf01-b11e2d6dfb9b]
+//[{"name":"tempTool","arguments":{"city":"Brisbane"}}]
+//[{"name":"say_to_user","arguments":{"message":"The current temperature in Brisbane is 25 degrees Celsius. Since it's quite warm, you might want to wear something light and comfortable."}}]

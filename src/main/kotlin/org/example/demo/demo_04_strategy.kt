@@ -1,43 +1,60 @@
 package org.example.demo
 
 import ai.koog.agents.core.agent.AIAgent
-import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.dsl.builder.forwardTo
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.ext.tool.SayToUser
-import ai.koog.prompt.dsl.prompt
 import kotlinx.coroutines.runBlocking
+import kotlin.random.Random
 
 fun main() {
     runBlocking {
-        val (executor, model) = gptoss()
+        val (executor, model) = ministral3b()
 
-        val stringToIntStrategy = strategy<String, Int>("str2int") {
-            val toInt by node<String, Int> { it.toInt() }
+        val myStrategy = strategy<String, String>("my custom strategy") {
+            val str2int by node<String, Int> { it.toInt() }
             val inc by node<Int, Int> { it + 1 }
 
-            edge(nodeStart forwardTo toInt)
-            edge(toInt forwardTo inc)
-            edge(inc forwardTo nodeFinish)
+            val spellInSpanish by node<Int, String> {
+                llm.writeSession {
+                    appendPrompt {
+                        user("Spell $it in Spanish")
+                    }
+
+                    val response = requestLLMWithoutTools()
+                    response.content
+                }
+            }
+            val spellInItalian by node<Int, String> {
+                llm.writeSession {
+                    appendPrompt {
+                        user("Spell $it in Italian")
+                    }
+
+                    val response = requestLLMWithoutTools()
+                    response.content
+                }
+            }
+
+            edge(nodeStart forwardTo str2int)
+            edge(str2int forwardTo inc)
+            edge(inc forwardTo spellInSpanish onCondition { it % 2 == 0 })
+            edge(inc forwardTo spellInItalian onCondition { it % 2 != 0 })
+            edge(spellInSpanish forwardTo nodeFinish)
+            edge(spellInItalian forwardTo nodeFinish)
         }
 
         val agent = AIAgent(
             promptExecutor = executor,
-            strategy = stringToIntStrategy,
-            agentConfig = AIAgentConfig(
-                prompt = prompt("example") {
-                    system {
-                        """
-                            You are a helpful assistant that can answer general questions.
-                            Answer any user query and provide a detailed response.
-                            Once you have the answer, tell it to the user
-                        """.trimIndent()
-                    }
-                },
-                model = model,
-                maxAgentIterations = 50
-            ),
+            systemPrompt = """
+                                    You are a helpful assistant that can answer general questions.
+                                    Answer any user query and provide a detailed response.
+                                    Once you have the answer, tell it to the user
+                    """.trimIndent(),
+            strategy = myStrategy,
+            llmModel = model,
+            maxIterations = 50,
             toolRegistry = ToolRegistry {
                 tools(
                     listOf(SayToUser)
@@ -45,7 +62,7 @@ fun main() {
             }
         )
 
-        agent.run("555").also { println(it) }
+        agent.run(Random.nextInt(0, 100).toString()).also { println(it) }
     }
 }
 
