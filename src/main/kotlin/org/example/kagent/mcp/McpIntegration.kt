@@ -3,6 +3,7 @@ package org.example.kagent.mcp
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.core.tools.reflect.tool
 import ai.koog.agents.mcp.McpToolRegistryProvider
+import io.ktor.client.engine.ProxyBuilder.http
 import org.example.kagent.tools.fileOperations
 import org.example.kagent.tools.kotlinCompiler
 import org.example.kagent.tools.projectStructure
@@ -21,13 +22,13 @@ object McpIntegration {
 //        }
     }
     
-    private suspend fun createMcpToolRegistryBlocking(): ToolRegistry {
+    public suspend fun createMcpToolRegistry(): ToolRegistry {
         return try {
             println("🔌 Attempting to connect to JetBrains MCP server...")
 
             println("Connecting to MCP server...")
             val toolRegistry = McpToolRegistryProvider.fromTransport(
-                transport = McpToolRegistryProvider.defaultSseTransport("http://localhost:64342")
+                transport = McpToolRegistryProvider.defaultSseTransport("http://127.0.0.1:64343")
             )
 
             println("✅ Successfully connected to JetBrains MCP server")

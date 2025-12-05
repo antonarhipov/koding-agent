@@ -29,18 +29,9 @@ fun main(args: Array<String>): Unit {
         val agent: AIAgent<String, String> = AIAgent(
             promptExecutor = executor,
             systemPrompt = """
-            You are an AI assistant helping users to solve tasks based on available tools.
-            For any task:
-            1. Analyze the request and determine required tools.
-            2. Execute tools to perform the changes.
-            3. Do not engage in conversation before completing the task.
-            4. Say the final result to the user.
-            
-            MANDATORY INSTRUCTIONS:
-            - Only use provided tools
-            - No direct conversation - complete task first
-            - All changes must be made through tool execution
-            - You must use the SAYTOOL to provide the result to the user
+            You are a helpful assistant that can answer general questions.
+            Answer any user query and provide a detailed response.
+            Once you have the answer, tell it to the user.
         """.trimIndent(),
             llmModel = model,
             toolRegistry = toolRegistry,
