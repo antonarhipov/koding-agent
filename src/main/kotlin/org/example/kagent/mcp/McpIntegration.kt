@@ -27,8 +27,11 @@ object McpIntegration {
             println("🔌 Attempting to connect to JetBrains MCP server...")
 
             println("Connecting to MCP server...")
+
+            val transport = McpToolRegistryProvider.defaultSseTransport("http://127.0.0.1:64343/sse")
+
             val toolRegistry = McpToolRegistryProvider.fromTransport(
-                transport = McpToolRegistryProvider.defaultSseTransport("http://127.0.0.1:64343")
+                transport = transport
             )
 
             println("✅ Successfully connected to JetBrains MCP server")

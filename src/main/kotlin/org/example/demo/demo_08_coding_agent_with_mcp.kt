@@ -31,7 +31,7 @@ suspend fun main(args: Array<String>) {
     }
 
     try {
-        val result = agent.run("Write and test a fizzbuzz program in Kotlin")
+        val result = agent.run("Write and test a fizzbuzz program in Kotlin. Use fizzbuzz project")
         println(result)
     } finally {
         executor.close()
