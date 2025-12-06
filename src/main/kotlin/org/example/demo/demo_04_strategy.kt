@@ -53,13 +53,7 @@ fun main() {
                                     Once you have the answer, tell it to the user
                     """.trimIndent(),
             strategy = myStrategy,
-            llmModel = model,
-            maxIterations = 50,
-            toolRegistry = ToolRegistry {
-                tools(
-                    listOf(SayToUser)
-                )
-            }
+            llmModel = model
         )
 
         agent.run(Random.nextInt(0, 100).toString()).also { println(it) }
