@@ -40,7 +40,15 @@ suspend fun main(args: Array<String>) {
         }
     }
 
-    val (path, task) = ("/Users/anton/IdeaProjects/kagent/demo" to "Write fizzbuzz program in Kotlin")
+    val path = "/Users/anton/IdeaProjects/kagent/demo"
+    val task = """
+        Implement a fizzbuzz program in Kotlin.
+        1) Create a Gradle project in the target directory
+        2) Create a Fizzbuzz class in the src/main/kotlin directory
+        3) Implement the fizzbuzz function in the Fizzbuzz class
+        4) Create a test class in the src/test/kotlin directory
+        5) Implement the test function in the test class
+        """.trimIndent()
     val input = "Project absolute path: $path\n\n## Task\n$task"
     try {
         val result = agent.run(input)

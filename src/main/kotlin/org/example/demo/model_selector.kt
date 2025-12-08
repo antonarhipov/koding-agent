@@ -12,7 +12,8 @@ suspend fun mistral() = autoselect("mistral:latest")
 suspend fun qwen314b() = autoselect("qwen3:14b")
 suspend fun qwen_latest() = autoselect("qwen3:latest")
 suspend fun devstral24b() = autoselect("devstral:24b")
-suspend fun ministral3b() = autoselect("ministral-3:3b")
+suspend fun ministral3_3b() = autoselect("ministral-3:3b")
+suspend fun ministral3_14b() = autoselect("ministral-3:14b")
 
 suspend fun autoselect(selector: String) = run {
     val client = OllamaClient()

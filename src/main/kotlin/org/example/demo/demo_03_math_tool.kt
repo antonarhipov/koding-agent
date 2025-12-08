@@ -19,7 +19,7 @@ import kotlinx.serialization.Serializable
 fun main(args: Array<String>): Unit {
     runBlocking {
         //select executor based on command line parameter
-        val (executor, model) = ministral3b()
+        val (executor, model) = ministral3_3b()
 
         val toolRegistry = ToolRegistry {
             tool(SayToUser)
