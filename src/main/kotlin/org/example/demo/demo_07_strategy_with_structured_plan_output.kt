@@ -58,22 +58,21 @@ fun main(args: Array<String>) {
         val (executor, model) = openai()
 
         val codingStrategy = strategy<String, String>("coding strategy") {
-
-            val nodePlanWork by subgraphWithTask<String, String>(
-                name = "plan work",
-                tools = emptyList()) { input ->
-                """
-                    Create a minimal list of tasks as a plan, how to implement the request.
-                    Assume that this is a new project and all new code should be written in a new folder.
-                    The first step in the plan should always be creating the new directory for the project.
-                    Enumerate the tasks.
-                    
-                    User input: $input
-                """
-            }
-
-            val nodePlanWorkStructured by node<String, TaskPlan> { _ ->
+            val nodePlanWorkStructured by node<String, TaskPlan> { input ->
                 val structuredResponse = llm.writeSession {
+                    appendPrompt {
+                        user(
+                            """
+                                Create a minimal list of tasks as a plan, how to implement the request.
+                                Assume that this is a new project and all new code should be written in a new folder.
+                                The first step in the plan should always be creating the new directory for the project.
+                                Enumerate the tasks.
+                                
+                                User input: $input
+                            """.trimIndent()
+                        )
+                    }
+
                     requestLLMStructured<TaskPlan>(
                         examples = examplePlan
                     )
@@ -81,10 +80,9 @@ fun main(args: Array<String>) {
 
                 val default = TaskPlan(0, items = emptyList())
 
-                val plan = structuredResponse.getOrNull()?.data ?: default
-                println("I've got the structured plan! Number of tasks: ${plan.items.size}")
-
-                plan
+                (structuredResponse.getOrNull()?.data ?: default).also {
+                    println("I've got the structured plan! Number of tasks: ${it.items.size}")
+                }
             }
 
 
@@ -108,7 +106,7 @@ fun main(args: Array<String>) {
                 """
             }
 
-            nodeStart then nodePlanWork then nodePlanWorkStructured then nodeAnalyzePlan then nodeImplementTask then nodeFinish
+            nodeStart then nodePlanWorkStructured then nodeAnalyzePlan then nodeImplementTask then nodeFinish
         }
 
         val agent = AIAgent(
