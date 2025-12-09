@@ -12,7 +12,7 @@ class NodeDelegate<T : Node>(init: () -> T) {
     }
 }
 
-// Sealed interface for nodes
+//region Sealed interface for nodes
 sealed interface Node {
     val id: String
 }
@@ -32,7 +32,7 @@ class ProcessNode(
 ) : Node {
     override fun toString(): String = "ProcessNode(id='$id', operation='$operation')"
 }
-
+//endregion
 
 fun main() {
     var node by NodeDelegate { DataNode(id = "node1", data = "Sample data") }
