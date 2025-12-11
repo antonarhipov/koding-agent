@@ -54,8 +54,8 @@ val examplePlan = listOf(
 
 fun main(args: Array<String>) {
     runBlocking {
-//        val (executor, model) = gptoss()
-        val (executor, model) = openai()
+        val (executor, model) = gptoss()
+//        val (executor, model) = openai()
 
         val codingStrategy = strategy<String, String>("coding strategy") {
             val nodePlanWorkStructured by node<String, TaskPlan> { input ->
@@ -96,13 +96,15 @@ fun main(args: Array<String>) {
             val nodeImplementTask by subgraphWithTask<TaskPlan, String>(
                 ToolSelectionStrategy.ALL,
                 name = "implement task",
-            ) { input ->
+            ) { plan ->
                 """
-                    Implement the user request according to the supplied plan.
-                    The code should be generated in a new dedicated directory.
-                    Once you have the answer, tell it to the user.
-
-                    User input: $input
+                    Implement the user request according to the following plan:
+                   
+                    ${buildString { 
+                        plan.items.forEachIndexed { index, item ->
+                            appendLine("$index) ${item.task}")
+                        }
+                    }}
                 """
             }
 
@@ -131,7 +133,7 @@ fun main(args: Array<String>) {
                 tool(ListDirectoryTool(JVMFileSystemProvider.ReadOnly))
                 tool(ReadFileTool(JVMFileSystemProvider.ReadOnly))
                 tool(EditFileTool(JVMFileSystemProvider.ReadWrite))
-                tool(createExecuteShellCommandToolFromEnv())
+                tool(createBraveExecuteShellCommandToolFromEnv())
             }
         ) {
             handleEvents {
