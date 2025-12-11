@@ -135,11 +135,6 @@ fun main(args: Array<String>) {
             }
         ) {
             handleEvents {
-//                install(OpenTelemetry) {
-//                    setVerbose(true)
-//                    addLangfuseExporter()
-//                }
-
                 onToolCallStarting { ctx ->
                     println("Calling tool: ${ctx.tool.name}(${ctx.toolArgs})")
                 }
@@ -159,8 +154,16 @@ fun main(args: Array<String>) {
         }
 
 
-        val (path, task) = ("/Users/anton/IdeaProjects/kagent/demo" to "Write and test a fizzbuzz program in Kotlin")
-        val input = "Project absolute path: $path\n\n## Task\n$task"
+        val path = "/Users/anton/IdeaProjects/kagent/demo"
+        val task = """
+            Implement a fizzbuzz program in Kotlin.
+        """.trimIndent()
+        val input = """
+            Project absolute path: ${path}
+        
+            ### Task
+            $task
+        """.trimIndent()
         try {
             val result = agent.run(input)
             println(result)

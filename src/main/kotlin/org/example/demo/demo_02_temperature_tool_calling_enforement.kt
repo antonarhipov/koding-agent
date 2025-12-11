@@ -4,16 +4,14 @@ import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.entity.ToolSelectionStrategy
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.agents.core.feature.handler.tool.ToolCallStartingContext
-import ai.koog.agents.core.feature.message.FeatureMessage
-import ai.koog.agents.core.feature.message.FeatureMessageProcessor
 import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import kotlinx.coroutines.runBlocking
 import ai.koog.agents.core.tools.reflect.tool
 import ai.koog.agents.ext.agent.subgraphWithTask
+import ai.koog.agents.ext.tool.SayToUser
 import ai.koog.agents.features.eventHandler.feature.handleEvents
-import ai.koog.agents.features.tracing.feature.Tracing
-import kotlinx.coroutines.flow.StateFlow
 
 fun main(args: Array<String>) {
     runBlocking {
@@ -48,11 +46,19 @@ fun main(args: Array<String>) {
             }
         }
 
-        agent.run("What is the current temperature? What should I wear?").also { println(it) }
+        agent.run("What is the current temperature in Tallinn? What should I wear?").also { println(it) }
     }
 }
 
 @Tool
-//@LLMDescription("The tool provides real time temperature in celsius. It integrates with Weather.com")
-suspend fun observeTemperature() = 30L
+@LLMDescription("The tool provides real time temperature")
+fun observeTemperature(
+    city: String
+) = when(city) {
+    "Brisbane" -> 30L
+    "Sydney" -> 24L
+    "Melbourne" -> 26L
+    "Tallinn" -> -1L
+    else -> 0
+}
 

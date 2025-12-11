@@ -10,9 +10,10 @@ import kotlinx.coroutines.runBlocking
 import ai.koog.agents.core.tools.reflect.tool
 import ai.koog.agents.features.eventHandler.feature.handleEvents
 
+
 fun main(args: Array<String>) {
     runBlocking {
-        val (executor, model) = gptoss()
+        val (executor, model) = gptoss()//ministral3_3b()
 
         val agent = AIAgent(
             promptExecutor = executor,
@@ -30,19 +31,33 @@ fun main(args: Array<String>) {
         ) {
             handleEvents {
                 onToolCallStarting { ctx: ToolCallStartingContext ->
-                    println("Calling the tool: ${ctx.tool.name}")
+                    println("Calling the tool: ${ctx.tool.name} (${ctx.toolArgs})")
                 }
             }
         }
 
-        agent.run("What is the current temperature? What should I wear?").also { println(it) }
+        agent.run("What is the current temperature in Sydney? What should I wear?").also { println(it) }
     }
 }
 
 @Tool
 @LLMDescription("The tool provides real time temperature in celsius. It integrates with Weather.com")
-suspend fun temperatureTool() = 30L
-//suspend fun temperatureTool() = 10000L
+fun temperatureTool(city: String) = 30L
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -12,3 +12,7 @@ fun createExecuteShellCommandToolFromEnv(): ExecuteShellCommandTool {
         ExecuteShellCommandTool(JvmShellCommandExecutor(), PrintShellCommandConfirmationHandler())
     }
 }
+
+fun createBraveExecuteShellCommandToolFromEnv() =
+    ExecuteShellCommandTool(JvmShellCommandExecutor()) { _ -> ShellCommandConfirmation.Approved }
+

@@ -30,8 +30,18 @@ suspend fun main(args: Array<String>) {
         }
     }
 
+    val path = "/Users/anton/IdeaProjects/kagent/demo"
+    val task = """
+        Implement a fizzbuzz program in Kotlin.
+    """.trimIndent()
+    val input = """
+        Project absolute path: ${path}
+        
+        ### Task
+        $task
+    """.trimIndent()
     try {
-        val result = agent.run("Write and test a fizzbuzz program in Kotlin. Use fizzbuzz project")
+        val result = agent.run(input)
         println(result)
     } finally {
         executor.close()

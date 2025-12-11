@@ -55,17 +55,6 @@ suspend fun mathTool(
     numbers: List<Int>,
 ): Int = numbers.sumOf { it }
 
-
-//> Task :org.example.demo.Demo_03_math_toolKt.main()
-//[main] INFO ai.koog.prompt.executor.ollama.client.OllamaClient - Loaded Ollama model card for gpt-oss:20b
-//[main] INFO ai.koog.agents.features.eventHandler.feature.EventHandler - Start installing feature: EventHandler
-//[main] INFO ai.koog.agents.core.agent.entity.AIAgentSubgraph - Executing subgraph 'single_run' [single_run, single_run, 4f7aa00c-3108-45a5-8ebe-b0ff8cdcdc0d]
-//[main] INFO ai.koog.agents.core.agent.entity.AIAgentSubgraph - No enforced execution point, starting from __start__ [single_run, single_run, 4f7aa00c-3108-45a5-8ebe-b0ff8cdcdc0d]
-//[main] INFO ai.koog.agents.core.agent.GraphAIAgent - [agent id: 3506080e-111b-47d4-9db3-35865ae48f11, run id: 4f7aa00c-3108-45a5-8ebe-b0ff8cdcdc0d] Executing tools: [say_to_user]
-//Calling the tool 'say_to_user'(Args(message=You have 4 apples left.))
-//Agent says: You have 4 apples left.
-
-
 //> Task :org.example.demo.Demo_03_math_toolKt.main()
 //[main] INFO ai.koog.prompt.executor.ollama.client.OllamaClient - Loaded Ollama model card for gpt-oss:20b
 //[main] INFO ai.koog.agents.features.eventHandler.feature.EventHandler - Start installing feature: EventHandler

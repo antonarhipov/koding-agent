@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
 fun main(args: Array<String>) {
 
     runBlocking {
-        val (executor, model) = gptoss()
+        val (executor, model) = ministral3_3b()
 
         val agent = AIAgent(
             promptExecutor = executor,

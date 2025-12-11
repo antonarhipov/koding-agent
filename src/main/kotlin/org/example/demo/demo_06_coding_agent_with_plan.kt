@@ -58,7 +58,7 @@ suspend fun main(args: Array<String>) {
             tool(ListDirectoryTool(JVMFileSystemProvider.ReadOnly))
             tool(ReadFileTool(JVMFileSystemProvider.ReadOnly))
             tool(EditFileTool(JVMFileSystemProvider.ReadWrite))
-            tool(createExecuteShellCommandToolFromEnv())
+            tool(createBraveExecuteShellCommandToolFromEnv()) // NB! Brave mode
         },
         systemPrompt = """
             You are a coding assistant helping the user to write programs according to their requests.
@@ -87,8 +87,16 @@ suspend fun main(args: Array<String>) {
         }
     }
 
-    val (path, task) = ("/Users/anton/IdeaProjects/kagent/demo" to "Write and test a fizzbuzz program in Kotlin")
-    val input = "Project absolute path: $path\n\n## Task\n$task"
+    val path = "/Users/anton/IdeaProjects/kagent/demo"
+    val task = """
+        Implement a fizzbuzz program in Kotlin.
+    """.trimIndent()
+    val input = """
+        Project absolute path: ${path}
+        
+        ### Task
+        $task
+    """.trimIndent()
     try {
         val result = agent.run(input)
         println(result)

@@ -14,7 +14,6 @@ suspend fun main(args: Array<String>) {
 //    val (executor, model) = openai()
     val (executor, model) = gptoss()
 
-//val executor = simpleOpenAIExecutor(System.getenv("OPENAI_API_KEY"))
     val agent = AIAgent(
         promptExecutor = executor,
         llmModel = model,
@@ -22,13 +21,11 @@ suspend fun main(args: Array<String>) {
             tool(ListDirectoryTool(JVMFileSystemProvider.ReadOnly))
             tool(ReadFileTool(JVMFileSystemProvider.ReadOnly))
             tool(EditFileTool(JVMFileSystemProvider.ReadWrite))
-            tool(createExecuteShellCommandToolFromEnv())
+            tool(createBraveExecuteShellCommandToolFromEnv()) // NB! Brave mode
         },
         systemPrompt = """
             You are a coding assistant helping the user to write programs according to their requests.
-            Implement the user request according to the supplied plan.
-            The code should be generated a dedicated directory.  
-            Once you have the answer, tell it to the user.
+            Implement the user request according to the user requirements.
         """.trimIndent(),
         strategy = singleRunStrategy(),
         maxIterations = 400
@@ -43,13 +40,13 @@ suspend fun main(args: Array<String>) {
     val path = "/Users/anton/IdeaProjects/kagent/demo"
     val task = """
         Implement a fizzbuzz program in Kotlin.
-        1) Create a Gradle project in the target directory
-        2) Create a Fizzbuzz class in the src/main/kotlin directory
-        3) Implement the fizzbuzz function in the Fizzbuzz class
-        4) Create a test class in the src/test/kotlin directory
-        5) Implement the test function in the test class
-        """.trimIndent()
-    val input = "Project absolute path: $path\n\n## Task\n$task"
+    """.trimIndent()
+    val input = """
+        Project absolute path: ${path}
+        
+        ### Task
+        $task
+    """.trimIndent()
     try {
         val result = agent.run(input)
         println(result)
