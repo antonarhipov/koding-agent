@@ -35,7 +35,6 @@ suspend fun main(args: Array<String>) {
         }
 
         val nodeImplementTask by subgraphWithTask<String, String>(
-            ToolSelectionStrategy.ALL,
             name = "implement task",
         ) { input: String ->
             """
@@ -71,7 +70,7 @@ suspend fun main(args: Array<String>) {
     ) {
         handleEvents {
             onToolCallStarting { ctx ->
-                println("Tool '${ctx.tool.name}' called with args: ${ctx.toolArgs.toString().take(100)}")
+                println("Tool '${ctx.toolName}' called with args: ${ctx.toolArgs.toString().take(100)}")
             }
             install(Tracing) {
                 addMessageProcessor(object : FeatureMessageProcessor() {

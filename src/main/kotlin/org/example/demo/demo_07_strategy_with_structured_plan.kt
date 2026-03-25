@@ -3,6 +3,7 @@ package org.example.demo
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.agent.entity.ToolSelectionStrategy
+import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.ext.agent.subgraphWithTask
@@ -54,7 +55,6 @@ fun main(args: Array<String>) {
             }
 
             val nodeImplementTask by subgraphWithTask<Plan, String>(
-                ToolSelectionStrategy.ALL,
                 name = "implement task",
             ) { input ->
                 """
@@ -96,7 +96,7 @@ fun main(args: Array<String>) {
         ) {
             handleEvents {
                 onToolCallStarting { ctx ->
-                    println("Calling tool: ${ctx.tool.name}(${ctx.toolArgs})")
+                    println("Calling tool: ${ctx.toolName}(${ctx.toolArgs})")
                 }
                 onLLMCallCompleted { ctx ->
                     println("LLM responded =========================  ")

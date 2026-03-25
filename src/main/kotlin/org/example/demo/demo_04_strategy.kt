@@ -1,7 +1,7 @@
 package org.example.demo
 
 import ai.koog.agents.core.agent.AIAgent
-import ai.koog.agents.core.dsl.builder.forwardTo
+import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
 import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
@@ -10,34 +10,12 @@ fun main() {
     runBlocking {
         val (executor, model) = ministral3_3b()
 
-        val strategy = strategy<String, String>("custom strategy") {
-            val str2int by node<String, Int> { input -> input.toInt() }
-            val increment by node<Int, Int> { input -> input + 1 }
-            val spanish by node<Int, String>("spell in spanish") { input ->
-                llm.writeSession {
-                    appendPrompt {
-                        user("Spell $input in Spanish")
-                    }
-                    val response = requestLLMWithoutTools()
-                    response.content
-                }
-            }
-            val italian by node<Int, String>("spell in italian") { input ->
-                llm.writeSession {
-                    appendPrompt {
-                        user("Spell $input in Italian")
-                    }
-                    val response = requestLLMWithoutTools()
-                    response.content
-                }
-            }
+        val strategy = strategy<String, Int>("custom strategy") {
 
-            edge(nodeStart forwardTo str2int)
-            edge(str2int forwardTo increment)
-            edge(increment forwardTo spanish onCondition { it % 2 == 0 })
-            edge(increment forwardTo italian onCondition { it % 2 != 0 })
-            edge(spanish forwardTo nodeFinish)
-            edge(italian forwardTo nodeFinish)
+            val str2int by node<String, Int> { it.toInt() }
+            val increment by node<Int, Int> { it + 1 }
+
+            nodeStart then str2int then increment then nodeFinish
         }
 
         val agent = AIAgent(

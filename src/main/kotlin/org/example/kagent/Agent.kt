@@ -140,13 +140,13 @@ private fun executorAndModel(selector: String): Pair<SingleLLMPromptExecutor, LL
         System.getenv("OPENAI_API_KEY") ?: throw IllegalStateException("OPENAI_API_KEY not set")
     ) to OpenAIModels.Chat.GPT5
 
-    "sonnet37" -> simpleAnthropicExecutor(
-        System.getenv("ANTHROPIC_API_KEY") ?: throw IllegalStateException("ANTHROPIC_API_KEY not set")
-    ) to AnthropicModels.Sonnet_3_7
-
     "sonnet4" -> simpleAnthropicExecutor(
         System.getenv("ANTHROPIC_API_KEY") ?: throw IllegalStateException("ANTHROPIC_API_KEY not set")
     ) to AnthropicModels.Sonnet_4
+
+    "sonnet45" -> simpleAnthropicExecutor(
+        System.getenv("ANTHROPIC_API_KEY") ?: throw IllegalStateException("ANTHROPIC_API_KEY not set")
+    ) to AnthropicModels.Sonnet_4_5
 
     "gemini2flash" -> simpleGoogleAIExecutor(
         System.getenv("GOOGLE_API_KEY") ?: throw IllegalStateException("GOOGLE_API_KEY not set")

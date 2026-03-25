@@ -2,7 +2,7 @@ package org.example.demo
 
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.config.AIAgentConfig
-import ai.koog.agents.core.agent.entity.ToolSelectionStrategy
+import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.core.tools.annotations.LLMDescription
@@ -13,11 +13,6 @@ import ai.koog.agents.ext.tool.file.ListDirectoryTool
 import ai.koog.agents.ext.tool.file.ReadFileTool
 import ai.koog.agents.features.eventHandler.feature.handleEvents
 import ai.koog.prompt.dsl.prompt
-import ai.koog.prompt.executor.clients.openai.OpenAIModels
-import ai.koog.prompt.executor.llms.Executors.promptExecutor
-import ai.koog.prompt.message.Message
-import ai.koog.prompt.structure.StructureFixingParser
-import ai.koog.prompt.structure.executeStructured
 import ai.koog.rag.base.files.JVMFileSystemProvider
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerialName
@@ -30,7 +25,8 @@ data class Task(
     @property:LLMDescription("The task identifier")
     val id: Int,
     @property:LLMDescription("The task description")
-    val task: String)
+    val task: String
+)
 
 @Serializable
 @SerialName("TaskPlan")
@@ -43,13 +39,15 @@ data class TaskPlan(
 )
 
 val examplePlan = listOf(
-    TaskPlan(1, listOf(
-        Task(1, "Create the project directory at /some/path"),
-        Task(2, "Initialize a new project "),
-        Task(3, "Create Foo.kt and implement the function"),
-        Task(4, "Create FooTest.kt and write unit tests that verify the function"),
-        Task(5, "Run test to ensure all tests pass")
-    ))
+    TaskPlan(
+        1, listOf(
+            Task(1, "Create the project directory at /some/path"),
+            Task(2, "Initialize a new project "),
+            Task(3, "Create Foo.kt and implement the function"),
+            Task(4, "Create FooTest.kt and write unit tests that verify the function"),
+            Task(5, "Run test to ensure all tests pass")
+        )
+    )
 )
 
 fun main(args: Array<String>) {
@@ -94,17 +92,18 @@ fun main(args: Array<String>) {
             }
 
             val nodeImplementTask by subgraphWithTask<TaskPlan, String>(
-                ToolSelectionStrategy.ALL,
                 name = "implement task",
             ) { plan ->
                 """
                     Implement the user request according to the following plan:
                    
-                    ${buildString { 
+                    ${
+                    buildString {
                         plan.items.forEachIndexed { index, item ->
                             appendLine("$index) ${item.task}")
                         }
-                    }}
+                    }
+                }
                 """
             }
 
@@ -138,7 +137,7 @@ fun main(args: Array<String>) {
         ) {
             handleEvents {
                 onToolCallStarting { ctx ->
-                    println("Calling tool: ${ctx.tool.name}(${ctx.toolArgs})")
+                    println("Calling tool: ${ctx.toolName}(${ctx.toolArgs})")
                 }
                 onLLMCallStarting { ctx ->
                     println("LLM Call =========================  ")

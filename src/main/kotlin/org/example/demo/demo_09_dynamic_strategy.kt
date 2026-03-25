@@ -2,16 +2,8 @@ package org.example.demo
 
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.entity.AIAgentNodeBase
+import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
-import ai.koog.agents.core.feature.message.FeatureMessage
-import ai.koog.agents.core.feature.message.FeatureMessageProcessor
-import ai.koog.agents.core.tools.ToolRegistry
-import ai.koog.agents.features.eventHandler.feature.handleEvents
-import ai.koog.agents.features.tracing.feature.Tracing
-import ai.koog.prompt.executor.llms.SingleLLMPromptExecutor
-import ai.koog.prompt.executor.ollama.client.OllamaClient
-import ai.koog.prompt.executor.ollama.client.toLLModel
-import ai.koog.prompt.llm.LLModel
 import kotlinx.coroutines.runBlocking
 
 fun main() {

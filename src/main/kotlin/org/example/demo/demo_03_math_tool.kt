@@ -12,7 +12,6 @@ import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.tool
 import ai.koog.agents.ext.tool.SayToUser
 import ai.koog.agents.features.eventHandler.feature.handleEvents
-import ai.koog.prompt.executor.llms.Executors.promptExecutor
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
@@ -38,7 +37,7 @@ fun main(args: Array<String>): Unit {
         ) {
             handleEvents {
                 onToolCallStarting { ctx: ToolCallStartingContext ->
-                    println("Calling the tool '${ctx.tool.name}'(${ctx.toolArgs})")
+                    println("Calling the tool '${ctx.toolName}'(${ctx.toolArgs})")
                 }
             }
         }

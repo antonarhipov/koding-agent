@@ -37,7 +37,6 @@ fun main(args: Array<String>) {
             }
 
             val nodeImplementTask by subgraphWithTask<String, String>(
-                ToolSelectionStrategy.ALL,
                 name = "implement task",
             ) { input ->
                 """
@@ -77,13 +76,13 @@ fun main(args: Array<String>) {
             // Checkpoint feature requires unique node names in the strategy metadata
             install(Persistence) {
                 this.storage = inMemoryStorage
-                this.rollbackStrategy = RollbackStrategy.MessageHistoryOnly
+//                this.rollbackStrategy = RollbackStrategy.MessageHistoryOnly
                 this.enableAutomaticPersistence = true
             }
 
             handleEvents {
                 onToolCallStarting { ctx ->
-                    println("Calling tool: ${ctx.tool.name}(${ctx.toolArgs})")
+                    println("Calling tool: ${ctx.toolName}(${ctx.toolArgs})")
                 }
                 onLLMCallCompleted { ctx ->
                     println("LLM Response =========================  ")

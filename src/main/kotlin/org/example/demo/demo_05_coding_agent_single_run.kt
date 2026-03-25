@@ -11,8 +11,8 @@ import ai.koog.rag.base.files.JVMFileSystemProvider
 
 
 suspend fun main(args: Array<String>) {
-//    val (executor, model) = openai()
-    val (executor, model) = gptoss()
+    val (executor, model) = openai()
+//    val (executor, model) = gptoss()
 
     val agent = AIAgent(
         promptExecutor = executor,
@@ -32,7 +32,7 @@ suspend fun main(args: Array<String>) {
     ) {
         handleEvents {
             onToolCallStarting { ctx ->
-                println("Tool '${ctx.tool.name}' called with args: ${ctx.toolArgs.toString().take(100)}")
+                println("Tool '${ctx.toolName}' called with args: ${ctx.toolArgs.toString().take(100)}")
             }
         }
     }

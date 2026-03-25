@@ -13,7 +13,7 @@ import ai.koog.agents.features.eventHandler.feature.handleEvents
 
 fun main(args: Array<String>) {
     runBlocking {
-        val (executor, model) = gptoss()//ministral3_3b()
+        val (executor, model) = ministral3_3b()
 
         val agent = AIAgent(
             promptExecutor = executor,
@@ -31,7 +31,7 @@ fun main(args: Array<String>) {
         ) {
             handleEvents {
                 onToolCallStarting { ctx: ToolCallStartingContext ->
-                    println("Calling the tool: ${ctx.tool.name} (${ctx.toolArgs})")
+                    println("Calling the tool: ${ctx.toolName} (${ctx.toolArgs})")
                 }
             }
         }
@@ -42,7 +42,9 @@ fun main(args: Array<String>) {
 
 @Tool
 @LLMDescription("The tool provides real time temperature in celsius. It integrates with Weather.com")
-fun temperatureTool(city: String) = 30L
+fun temperatureTool(
+    @LLMDescription("The city name")
+    city: String) = 300L
 
 
 

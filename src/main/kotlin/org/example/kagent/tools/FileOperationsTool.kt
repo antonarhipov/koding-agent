@@ -18,7 +18,6 @@ package org.example.kagent.tools
 
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
-import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import java.io.File
 import kotlin.text.format

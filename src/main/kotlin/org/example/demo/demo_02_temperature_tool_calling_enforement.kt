@@ -15,7 +15,8 @@ import ai.koog.agents.features.eventHandler.feature.handleEvents
 
 fun main(args: Array<String>) {
     runBlocking {
-        val (executor, model) = ministral3_3b()
+//        val (executor, model) = ministral3_3b()
+        val (executor, model) = gptoss()
 
         val agent = AIAgent(
             promptExecutor = executor,
@@ -27,21 +28,18 @@ fun main(args: Array<String>) {
             llmModel = model,
             temperature = 1.0,
             strategy = strategy<String,String>("my strategy") {
-                val sg by subgraphWithTask<String,String>(
-                    ToolSelectionStrategy.ALL,
-                    name = "enforcement") { userInput ->
+                val sg by subgraphWithTask<String,String>(name = "enforcement") { userInput ->
                     "Help the user with their request: $userInput"
                 }
                 nodeStart then sg then nodeFinish
             },
             toolRegistry = ToolRegistry {
-//                tool(SayToUser)
                 tool(::observeTemperature)
             }
         ) {
             handleEvents {
-                onToolCallStarting { ctx: ToolCallStartingContext ->
-                    println("Calling the tool: ${ctx.tool.name}")
+                onToolCallStarting { ctx ->
+                    println("Calling the tool: ${ctx.toolName}")
                 }
             }
         }
